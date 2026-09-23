@@ -1,595 +1,426 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <!-- Made by MrDuck -->
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
 <title>APB — ApostolProject Browser</title>
-<link rel="icon" type="image/png" href="logo.png?v=2" />
-<link rel="stylesheet" href="vendor/katex/katex.min.css" />
-<link rel="stylesheet" href="style.css?v=25" />
+<link href="public/images/logo.png?v=10" rel="icon" type="image/png"/>
+<link href="vendor/katex/katex.min.css" rel="stylesheet"/>
+<link href="src/styles/index.css?v=21" rel="stylesheet"/>
 <script>
-  document.documentElement.setAttribute("data-theme", localStorage.getItem("apb-theme") || "dark");
+  const mode = localStorage.getItem("apb-theme") || "dark";
+  document.documentElement.setAttribute("data-theme", mode === "system" ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark") : mode);
 </script>
 </head>
 <body>
-  <!-- Icon sprite (feather-style, stroke = currentColor) -->
-  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
-    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></symbol>
-    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></symbol>
-    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v11m-5-4l5 5 5-5M4 20h16"/></symbol>
-    <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></symbol>
-    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6z"/></symbol>
-    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></symbol>
-    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 00-.14-1.4l2-1.55-2-3.46-2.35.95A7 7 0 0014.6 5.1L14.25 2.6h-4.5L9.4 5.1a7 7 0 00-1.91 1.44L5.14 5.6l-2 3.46 2 1.55a7 7 0 000 2.8l-2 1.55 2 3.46 2.35-.95A7 7 0 009.4 18.9l.35 2.5h4.5l.35-2.5a7 7 0 001.91-1.44l2.35.95 2-3.46-2-1.55c.09-.46.14-.93.14-1.4z"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></symbol>
-    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 2.8V7m8-4.2V7"/></symbol>
-    <symbol id="i-cloud-sun" viewBox="0 0 24 24"><circle cx="7.5" cy="7.5" r="3"/><path d="M7.5 1.5v1.6M1.5 7.5h1.6M3.3 3.3l1.1 1.1M11.7 3.3l-1.1 1.1M3.3 11.7l1.1-1.1"/><path d="M10 20h8.5a3.5 3.5 0 000-7 5 5 0 00-9.6-1.4A4 4 0 0010 20z"/></symbol>
-    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4.5"/><path d="M11.5 11.5L20 3m-3 3l2.5 2.5M14.5 8.5L17 11"/></symbol>
-    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M9 3h6v3.5a2.5 2.5 0 105 0V10h-3.5a2.5 2.5 0 100 5H20v6h-6v-3.5a2.5 2.5 0 10-5 0V21H3v-6h3.5a2.5 2.5 0 100-5H3V3h6z"/></symbol>
-    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z"/></symbol>
-    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></symbol>
-    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-2.6-6.4M21 3v6h-6"/></symbol>
-    <symbol id="i-chevL" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
-    <symbol id="i-chevR" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
-    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18-2.8-3-2.8-15 0-18z"/></symbol>
-    <symbol id="i-lang" viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.8 4-3.6 7.4-7 9M6 8.5C7 11 9.4 13.4 12 14.5"/><path d="M13 21l4.5-10L22 21M14.8 17h5.4"/></symbol>
-    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19z"/></symbol>
-    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 018 0v3.5"/></symbol>
-    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><circle cx="8.5" cy="8.5" r="1.4"/><circle cx="15.5" cy="8.5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="8.5" cy="15.5" r="1.4"/><circle cx="15.5" cy="15.5" r="1.4"/></symbol>
-    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 014.5 5h4l2 2.5H20A1.5 1.5 0 0121.5 9v9A1.5 1.5 0 0120 19.5H4.5A1.5 1.5 0 013 18z"/></symbol>
-    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 2.8A9.2 9.2 0 002.8 12c0 5.1 4.1 9.2 9.2 9.2 1.5 0 2.3-.9 2.3-2 0-.6-.2-1-.6-1.4-.4-.4-.6-.9-.6-1.4 0-1.1.9-2 2-2h2.3c2.1 0 3.8-1.7 3.8-3.8C21.2 6.4 17 2.8 12 2.8z"/><circle cx="7.5" cy="10.5" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/><circle cx="16.5" cy="10.5" r="1.2"/></symbol>
-    <symbol id="i-split" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M12 4v16"/></symbol>
-    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
-    <symbol id="i-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></symbol>
-    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.7 2.7 0 115 1.5c0 1.6-2.3 1.8-2.3 3.5"/><circle cx="12" cy="17.3" r="0.15" fill="currentColor" stroke-width="1.4"/></symbol>
-    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4.5 16.5l4.7-4.7a2 2 0 012.8 0l1.6 1.6M14 13.5l1-1a2 2 0 012.8 0l2.2 2.2"/></symbol>
-    <symbol id="i-broom" viewBox="0 0 24 24"><path d="M14 3l7 7-8.5 8.5-7-7z"/><path d="M6 14L2.5 20.5c3-1 5.4-.6 7 1L14 16"/></symbol>
-  </svg>
-
-  <!-- Custom frameless window — controls live INSIDE the toolbar -->
-  <div class="app-shell">
-
-    <!-- ============ SIDEBAR (Zen-style: vertical tabs + tools) ============ -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-inner">
-      <div class="side-head" data-apb-drag>
-        <div class="brand"><span class="brand-mark"></span><span class="brand-name"><span class="bn-full">AP Browser</span><span class="bn-short">APB</span></span></div>
-        <button id="collapseBtn" class="icon-btn small ghost" title="Свернуть панель">‹</button>
-        <span style="flex:1" data-apb-drag></span>
-      </div>
-
-      <div class="ws-strip">
-        <div class="ws-pills" id="wsStrip"></div>
-        <button id="wsAdd" class="icon-btn small ghost" title="Новый воркспейс">+</button>
-      </div>
-
-      <button id="newTabBtn" class="new-tab-btn" title="Новая вкладка (Ctrl+T)">
-        <span class="nt-plus">+</span><span class="lbl">Новая вкладка</span>
-      </button>
-
-      <div class="tab-list" id="tabstripScroll"></div>
-
-      <div class="side-tools">
-        <button class="rail-item" data-tab="bookmarks" title="Закладки">
-          <span class="glyph"><svg class="ic"><use href="#i-star"/></svg></span><span class="lbl">Закладки</span>
-        </button>
-        <button class="rail-item" data-tab="history" title="История">
-          <span class="glyph"><svg class="ic"><use href="#i-clock"/></svg></span><span class="lbl">История</span>
-        </button>
-        <button class="rail-item" data-tab="downloads" title="Загрузки">
-          <span class="glyph"><svg class="ic"><use href="#i-download"/></svg></span><span class="lbl">Загрузки</span>
-        </button>
-        <button class="rail-item" data-tab="notes" title="Заметки">
-          <span class="glyph"><svg class="ic"><use href="#i-note"/></svg></span><span class="lbl">Заметки</span>
-        </button>
-        <button class="rail-item" data-tab="ai" title="AI-ассистент">
-          <span class="glyph"><svg class="ic"><use href="#i-spark"/></svg></span><span class="lbl">AI-чат</span>
-        </button>
-      </div>
-      </div>
-    </aside>
-
-    <!-- ============ MAIN COLUMN ============ -->
-    <main class="main">
-
-      <!-- Horizontal tabstrip (used when "tabs on top" mode is enabled) -->
-      <div class="top-tabstrip" id="topTabstrip">
-        <button id="exitTopBtn" class="icon-btn small ghost" title="Вернуть боковую панель"><svg class="ic"><use href="#i-split"/></svg></button>
-        <div class="ws-pills" id="wsStripTop"></div>
-        <div class="tab-list-h" id="tabstripH"></div>
-        <button id="ntTopBtn" class="icon-btn small ghost" title="Новая вкладка (Ctrl+T)"><svg class="ic"><use href="#i-plus"/></svg></button>
-        <span style="flex:1" data-apb-drag></span>
-      </div>
-
-      <header class="toolbar" data-apb-drag>
-        <div class="nav-group">
-          <button id="navBack" class="nav-btn" title="Назад"><svg class="ic"><use href="#i-chevL"/></svg></button>
-          <button id="navFwd" class="nav-btn" title="Вперёд"><svg class="ic"><use href="#i-chevR"/></svg></button>
-          <button id="navReload" class="nav-btn" title="Обновить"><svg class="ic"><use href="#i-refresh"/></svg></button>
-          <button id="splitBtn" class="nav-btn" title="Разделить экран (сплит)"><svg class="ic"><use href="#i-split"/></svg></button>
-        </div>
-
-        <form id="addressForm" class="address-form">
-          <img id="addrFav" class="addr-fav" alt="" />
-          <input id="addressInput" type="text" placeholder="Поиск или адрес сайта" autocomplete="off" spellcheck="false" />
-          <button type="button" id="darkSiteBtn" class="icon-btn addr-btn" title="Тёмная тема для сайта (если у сайта её нет)"><svg class="ic"><use href="#i-moon"/></svg></button>
-          <button type="submit" title="Перейти"><svg class="ic"><use href="#i-send"/></svg></button>
-        </form>
-
-        <div class="profile-group">
-          <select id="profileSelect" title="Текущий профиль"></select>
-          <button id="quickCreateProfileBtn" class="icon-btn" title="Создать профиль"><svg class="ic"><use href="#i-plus"/></svg></button>
-        </div>
-        <button id="shieldBadge" class="shield-badge hidden" title="Максимальный уровень приватности включён"></button>
-        <button id="settingsBtn" class="icon-btn" title="Настройки"><svg class="ic"><use href="#i-gear"/></svg></button>
-
-        <!-- Window controls integrated into the toolbar (custom frameless window) -->
-        <div class="win-controls">
-          <button id="winMin" title="Свернуть"><svg width="11" height="11" viewBox="0 0 10 10"><path d="M1 5.2h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-          <button id="winMax" title="Развернуть / восстановить"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>
-          <button id="winClose" class="wc-close" title="Закрыть"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
-        </div>
-      </header>
-
-      <div class="workspace">
-
-        <!-- Side panel (Vivaldi-style drawers) -->
-        <aside class="side-panel" id="sidePanel">
-          <div class="side-panel-inner">
-
-            <section id="bookmarks" class="panel">
-              <h2 class="panel-title">Закладки</h2>
-              <div class="row">
-                <input id="bmSearch" type="text" placeholder="Поиск по названию, URL, тегам…" />
-              </div>
-              <details class="add-form">
-                <summary>+ Добавить закладку</summary>
-                <input id="bmTitle" placeholder="Название" />
-                <input id="bmUrl" placeholder="URL или javascript:… (букмарклет)" />
-                <input id="bmTags" placeholder="Теги через запятую" />
-                <select id="bmFolder" style="margin-top:6px"><option value="">— без папки —</option></select>
-                <button id="bmAddBtn">Сохранить</button>
-              </details>
-              <details class="add-form">
-                <summary>+ Новая папка</summary>
-                <input id="bmFolderName" placeholder="Имя папки" />
-                <select id="bmFolderParent" style="margin-top:6px"><option value="">— в корне —</option></select>
-                <button id="bmFolderBtn">Создать папку</button>
-              </details>
-              <ul id="bmList" class="list"></ul>
-            </section>
-
-            <section id="history" class="panel">
-              <h2 class="panel-title">
+<!-- Icon sprite (feather-style, stroke = currentColor) -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-star" viewbox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"></path></symbol>
+<symbol id="i-clock" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.2 2"></path></symbol>
+<symbol id="i-download" viewbox="0 0 24 24"><path d="M12 3v11m-5-4l5 5 5-5M4 20h16"></path></symbol>
+<symbol id="i-note" viewbox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"></path><path d="M14 3v5h5M9 12h7M9 16h7"></path></symbol>
+<symbol id="i-shield" viewbox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6z"></path></symbol>
+<symbol id="i-spark" viewbox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"></path></symbol>
+<symbol id="i-gear" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M19 12a7 7 0 00-.14-1.4l2-1.55-2-3.46-2.35.95A7 7 0 0014.6 5.1L14.25 2.6h-4.5L9.4 5.1a7 7 0 00-1.91 1.44L5.14 5.6l-2 3.46 2 1.55a7 7 0 000 2.8l-2 1.55 2 3.46 2.35-.95A7 7 0 009.4 18.9l.35 2.5h4.5l.35-2.5a7 7 0 001.91-1.44l2.35.95 2-3.46-2-1.55c.09-.46.14-.93.14-1.4z"></path></symbol>
+<symbol id="i-plus" viewbox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+<symbol id="i-search" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.5-4.5"></path></symbol>
+<symbol id="i-calendar" viewbox="0 0 24 24"><rect height="16" rx="2" width="17" x="3.5" y="5"></rect><path d="M3.5 10h17M8 2.8V7m8-4.2V7"></path></symbol>
+<symbol id="i-cloud-sun" viewbox="0 0 24 24"><circle cx="7.5" cy="7.5" r="3"></circle><path d="M7.5 1.5v1.6M1.5 7.5h1.6M3.3 3.3l1.1 1.1M11.7 3.3l-1.1 1.1M3.3 11.7l1.1-1.1"></path><path d="M10 20h8.5a3.5 3.5 0 000-7 5 5 0 00-9.6-1.4A4 4 0 0010 20z"></path></symbol>
+<symbol id="i-key" viewbox="0 0 24 24"><circle cx="8" cy="15" r="4.5"></circle><path d="M11.5 11.5L20 3m-3 3l2.5 2.5M14.5 8.5L17 11"></path></symbol>
+<symbol id="i-puzzle" viewbox="0 0 24 24"><path d="M9 3h6v3.5a2.5 2.5 0 105 0V10h-3.5a2.5 2.5 0 100 5H20v6h-6v-3.5a2.5 2.5 0 10-5 0V21H3v-6h3.5a2.5 2.5 0 100-5H3V3h6z"></path></symbol>
+<symbol id="i-moon" viewbox="0 0 24 24"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a8.5 8.5 0 1011 11z"></path></symbol>
+<symbol id="i-sun" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path></symbol>
+<symbol id="i-refresh" viewbox="0 0 24 24"><path d="M21 12a9 9 0 11-2.6-6.4M21 3v6h-6"></path></symbol>
+<symbol id="i-chevL" viewbox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+<symbol id="i-chevR" viewbox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></symbol>
+<symbol id="i-globe" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18-2.8-3-2.8-15 0-18z"></path></symbol>
+<symbol id="i-lang" viewbox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.8 4-3.6 7.4-7 9M6 8.5C7 11 9.4 13.4 12 14.5"></path><path d="M13 21l4.5-10L22 21M14.8 17h5.4"></path></symbol>
+<symbol id="i-pencil" viewbox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 013 3L8 19z"></path></symbol>
+<symbol id="i-lock" viewbox="0 0 24 24"><rect height="10" rx="2" width="15" x="4.5" y="10.5"></rect><path d="M8 10.5V7a4 4 0 018 0v3.5"></path></symbol>
+<symbol id="i-lock-open" viewbox="0 0 24 24"><rect height="10" rx="2" width="15" x="4.5" y="10.5"></rect><path d="M8 10.5V7a4 4 0 017.4-1.6"></path></symbol>
+<symbol id="i-dice" viewbox="0 0 24 24"><rect height="17" rx="3" width="17" x="3.5" y="3.5"></rect><circle cx="8.5" cy="8.5" r="1.4"></circle><circle cx="15.5" cy="8.5" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="8.5" cy="15.5" r="1.4"></circle><circle cx="15.5" cy="15.5" r="1.4"></circle></symbol>
+<symbol id="i-folder" viewbox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 014.5 5h4l2 2.5H20A1.5 1.5 0 0121.5 9v9A1.5 1.5 0 0120 19.5H4.5A1.5 1.5 0 013 18z"></path></symbol>
+<symbol id="i-palette" viewbox="0 0 24 24"><path d="M12 2.8A9.2 9.2 0 002.8 12c0 5.1 4.1 9.2 9.2 9.2 1.5 0 2.3-.9 2.3-2 0-.6-.2-1-.6-1.4-.4-.4-.6-.9-.6-1.4 0-1.1.9-2 2-2h2.3c2.1 0 3.8-1.7 3.8-3.8C21.2 6.4 17 2.8 12 2.8z"></path><circle cx="7.5" cy="10.5" r="1.2"></circle><circle cx="12" cy="7.5" r="1.2"></circle><circle cx="16.5" cy="10.5" r="1.2"></circle></symbol>
+<symbol id="i-split" viewbox="0 0 24 24"><rect height="16" rx="2.2" width="18" x="3" y="4"></rect><path d="M12 4v16"></path></symbol>
+<symbol id="i-send" viewbox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"></path></symbol>
+<symbol id="i-close" viewbox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"></path></symbol>
+<symbol id="i-help" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.3 9.3a2.7 2.7 0 115 1.5c0 1.6-2.3 1.8-2.3 3.5"></path><circle cx="12" cy="17.3" fill="currentColor" r="0.15" stroke-width="1.4"></circle></symbol>
+<symbol id="i-image" viewbox="0 0 24 24"><rect height="15" rx="2" width="17" x="3.5" y="4.5"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4.5 16.5l4.7-4.7a2 2 0 012.8 0l1.6 1.6M14 13.5l1-1a2 2 0 012.8 0l2.2 2.2"></path></symbol>
+<symbol id="i-broom" viewbox="0 0 24 24"><path d="M14 3l7 7-8.5 8.5-7-7z"></path><path d="M6 14L2.5 20.5c3-1 5.4-.6 7 1L14 16"></path></symbol>
+</svg>
+<!-- Custom frameless window — controls live INSIDE the toolbar -->
+<div class="browser-chrome">
+<!-- Horizontal tabstrip (used when "tabs on top" mode is enabled) -->
+<div class="top-tabstrip" id="topTabstrip">
+<div class="tab-list-h" id="tabstripH"></div>
+<button class="icon-btn small ghost" id="ntTopBtn" title="Новая вкладка (Ctrl+T)"><svg class="ic"><use href="#i-plus"></use></svg></button>
+<button class="icon-btn small ghost" id="exitTopBtn" title="Вернуть боковую панель"><svg class="ic"><use href="#i-split"></use></svg></button>
+<span data-apb-drag=""></span>
+</div>
+<header class="toolbar" data-apb-drag="">
+<div class="nav-group">
+<button class="nav-btn" id="navBack" title="Назад"><svg class="ic"><use href="#i-chevL"></use></svg></button>
+<button class="nav-btn" id="navFwd" title="Вперёд"><svg class="ic"><use href="#i-chevR"></use></svg></button>
+<button class="nav-btn" id="navReload" title="Обновить"><svg class="ic"><use href="#i-refresh"></use></svg></button>
+<button class="nav-btn" id="splitBtn" title="Разделить экран (сплит)"><svg class="ic"><use href="#i-split"></use></svg></button>
+</div>
+<form class="address-form" id="addressForm">
+<img alt="" class="addr-fav" id="addrFav"/>
+<input autocomplete="off" id="addressInput" placeholder="Поиск или адрес сайта" spellcheck="false" type="text"/>
+<button class="icon-btn addr-btn hidden" id="aiTranslateBtn" title="Перевести страницу" type="button"><svg class="ic"><use href="#i-lang"></use></svg></button>
+    <button class="icon-btn addr-btn hidden" id="permAddrBtn" title="Разрешения сайта" type="button"><svg class="ic"><use href="#i-shield"></use></svg></button>
+    <button class="icon-btn addr-btn" id="darkSiteBtn" title="Тёмная тема для сайта (если у сайта её нет)" type="button"><svg class="ic"><use href="#i-moon"></use></svg></button>
+    <button title="Перейти" type="submit"><svg class="ic"><use href="#i-send"></use></svg></button>
+</form>
+<div class="profile-group"><select aria-label="Рабочее пространство" id="workspaceSelect" title="Рабочее пространство"></select>
+<select id="profileSelect" title="Текущий профиль"></select>
+<button class="icon-btn" id="quickCreateProfileBtn" title="Создать профиль"><svg class="ic"><use href="#i-plus"></use></svg></button>
+</div>
+<button class="shield-badge hidden" id="shieldBadge" title="Максимальный уровень приватности включён"></button>
+<button class="icon-btn" id="settingsBtn" title="Настройки"><svg class="ic"><use href="#i-gear"></use></svg></button>
+<!-- Window controls integrated into the toolbar (custom frameless window) -->
+<div class="win-controls">
+<button id="winMin" title="Свернуть"><svg height="11" viewbox="0 0 10 10" width="11"><path d="M1 5.2h8" stroke="currentColor" stroke-linecap="round" stroke-width="1.3"></path></svg></button>
+<button id="winMax" title="Развернуть / восстановить"><svg height="10" viewbox="0 0 10 10" width="10"><rect fill="none" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3" width="8" x="1" y="1"></rect></svg></button>
+<button class="wc-close" id="winClose" title="Закрыть"><svg height="10" viewbox="0 0 10 10" width="10"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-linecap="round" stroke-width="1.3"></path></svg></button>
+</div>
+</header>
+</div>
+<div class="app-shell">
+<!-- ============ SIDEBAR (Zen-style: vertical tabs + tools) ============ -->
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-inner">
+<div class="side-head" data-apb-drag="">
+<div class="brand"><span class="brand-mark"></span><span class="brand-name"><span class="bn-full">AP Browser</span><span class="bn-short">APB</span></span></div>
+<button class="icon-btn small ghost" id="collapseBtn" title="Свернуть панель">‹</button>
+<span data-apb-drag="" style="flex:1"></span>
+</div>
+<div class="ws-strip">
+<div class="ws-pills" id="wsStrip"></div>
+<button class="icon-btn small ghost" id="wsAdd" title="Новый воркспейс">+</button>
+</div>
+<button class="new-tab-btn" id="newTabBtn" title="Новая вкладка (Ctrl+T)">
+<span class="nt-plus">+</span><span class="lbl">Новая вкладка</span>
+</button>
+<div class="tab-list" id="tabstripScroll"></div>
+<div class="side-tools">
+<button class="rail-item" data-tab="bookmarks" title="Закладки">
+<span class="glyph"><svg class="ic"><use href="#i-star"></use></svg></span><span class="lbl">Закладки</span>
+</button>
+<button class="rail-item" data-tab="history" title="История">
+<span class="glyph"><svg class="ic"><use href="#i-clock"></use></svg></span><span class="lbl">История</span>
+</button>
+<button class="rail-item" data-tab="downloads" title="Загрузки">
+<span class="glyph"><svg class="ic"><use href="#i-download"></use></svg></span><span class="lbl">Загрузки</span>
+</button>
+<button class="rail-item" data-tab="notes" title="Заметки">
+<span class="glyph"><svg class="ic"><use href="#i-note"></use></svg></span><span class="lbl">Заметки</span>
+</button>
+<button class="rail-item" data-tab="ai" title="AI-ассистент">
+<span class="glyph"><svg class="ic"><use href="#i-spark"></use></svg></span><span class="lbl">AI-чат</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- ============ MAIN COLUMN ============ -->
+<main class="main">
+<div class="workspace">
+<!-- Side panel (Vivaldi-style drawers) -->
+<aside class="side-panel" id="sidePanel">
+<div class="side-panel-inner">
+<section class="panel" id="bookmarks">
+<h2 class="panel-title">Закладки</h2>
+<div class="row">
+<input id="bmSearch" placeholder="Поиск по названию, URL, те��ам…" type="text"/>
+</div>
+<details class="add-form">
+<summary>+ Добавить закладку</summary>
+<input id="bmTitle" placeholder="Названи��"/>
+<input id="bmUrl" placeholder="URL или javascript:… (букмарклет)"/>
+<input id="bmTags" placeholder="Теги через запятую"/>
+<select id="bmFolder" style="margin-top:6px"><option value="">— без папки —</option></select>
+<button id="bmAddBtn">Сохранить</button>
+</details>
+<details class="add-form">
+<summary>+ Новая папка</summary>
+<input id="bmFolderName" placeholder="Имя папки"/>
+<select id="bmFolderParent" style="margin-top:6px"><option value="">— в корне —</option></select>
+<button id="bmFolderBtn">Создать папку</button>
+</details>
+<ul class="list" id="bmList"></ul>
+</section>
+<section class="panel" id="history">
+<h2 class="panel-title">
                 История
-                <button id="historyClearBtn" class="ghost-btn">Очистить</button>
-              </h2>
-              <ul id="historyList" class="list"></ul>
-            </section>
-
-            <section id="downloads" class="panel">
-              <h2 class="panel-title">
+                <button class="ghost-btn" id="historyClearBtn">Очистить</button>
+</h2>
+<ul class="list" id="historyList"></ul>
+</section>
+<section class="panel" id="downloads">
+<h2 class="panel-title">
                 Загрузки
-                <button id="dlClearHistory" class="ghost-btn" title="Очистить историю загрузок (файлы не удаляются)">✕ История</button>
-                <button id="dlOpenFolder" class="ghost-btn"><svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-folder"/></svg> Папка</button>
-              </h2>
-              <ul id="dlList" class="list"></ul>
-              <p class="hint">Файлы сохраняются в папку загрузок активного профиля. Кликните по файлу, чтобы открыть папку.</p>
-            </section>
+                <button class="ghost-btn" id="dlClearHistory" title="Очистить историю загрузок (файлы не удаляются)">✕ История</button>
+<button class="ghost-btn" id="dlOpenFolder"><svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-folder"></use></svg> Папка</button>
+</h2>
+<ul class="list" id="dlList"></ul>
+<p class="hint">Файлы сохраняются в папку загрузок активного профиля. Кликните по файлу, чтобы открыть папку.</p>
+</section>
+<section class="panel" id="notes">
+<h2 class="panel-title">Заметки</h2>
+<details class="add-form">
+<summary>+ Новая заметка</summary>
+<input id="noteName" placeholder="Имя или Папка/Имя (например, Работа/Idea.md)"/>
+<textarea id="noteContent" placeholder="# Заголовок
 
-            <section id="notes" class="panel">
-              <h2 class="panel-title">Заметки</h2>
-              <details class="add-form">
-                <summary>+ Новая заметка</summary>
-                <input id="noteName" placeholder="Имя или Папка/Имя (например, Работа/Idea.md)" />
-                <textarea id="noteContent" rows="4" placeholder="# Заголовок&#10;&#10;Текст заметки, [[ссылки]], #теги"></textarea>
-                <button id="noteAddBtn">Сохранить</button>
-              </details>
-              <ul id="notesList" class="list"></ul>
-              <div id="noteViewer" class="note-viewer hidden">
-                <button id="noteBackBtn" class="ghost-btn">← Назад</button>
-                <pre id="noteViewerContent"></pre>
-                <div class="backlinks-row"><strong>Backlinks:</strong> <span id="noteBacklinks"></span></div>
-              </div>
-            </section>
-
-          </div>
+Текст заметки, [[ссылки]], #теги" rows="4"></textarea>
+<button id="noteAddBtn">Сохранить</button>
+</details>
+<ul class="list" id="notesList"></ul>
+<div class="note-viewer hidden" id="noteViewer">
+<button class="ghost-btn" id="noteBackBtn">← Назад</button>
+<pre id="noteViewerContent"></pre>
+<div class="backlinks-row"><strong>Backlinks:</strong> <span id="noteBacklinks"></span></div>
+</div>
+</section>
+</div>
 <!-- Made by MrDuck -->
-          <div class="pane-resizer right" id="panelResizer" title="Потяните, чтобы изменить ширину панели"></div>
-        </aside>
-
-        <!-- Browser content area -->
-        <div class="browser-view" id="browserView">
-
-          <!-- Internal pages (settings / vault / extensions) — "site-like" pages -->
-          <div class="internal-host hidden" id="internalHost">
-            <nav class="isec-nav">
-              <button class="isec-link active" data-isec="settings"><svg class="ic"><use href="#i-gear"/></svg> Настройки</button>
-              <button class="isec-link" data-isec="appearance"><svg class="ic"><use href="#i-palette"/></svg> Оформление</button>
-              <button class="isec-link" data-isec="privacy"><svg class="ic"><use href="#i-shield"/></svg> Приватность</button>
-              <button class="isec-link" data-isec="history"><svg class="ic"><use href="#i-clock"/></svg> История</button>
-              <button class="isec-link" data-isec="vault"><svg class="ic"><use href="#i-key"/></svg> Пароли</button>
-              <!-- Расширения: пункт меню спрятан (юзер, сессия 111) — вернём
+<div class="pane-resizer right" id="panelResizer" title="Потяните, чтобы изменить ширину панели"></div>
+</aside>
+<!-- Browser content area -->
+<div class="browser-view" id="browserView">
+<!-- Internal pages (settings / vault / extensions) — "site-like" pages -->
+<div class="internal-host hidden" id="internalHost">
+<nav class="isec-nav">
+<button class="isec-link active" data-isec="settings"><svg class="ic"><use href="#i-gear"></use></svg> Настройки</button>
+<button class="isec-link" data-isec="appearance"><svg class="ic"><use href="#i-palette"></use></svg> Оформление</button>
+<button class="isec-link" data-isec="privacy"><svg class="ic"><use href="#i-shield"></use></svg> Приватность</button>
+<button class="isec-link" data-isec="history"><svg class="ic"><use href="#i-clock"></use></svg> История</button>
+<button class="isec-link" data-isec="vault"><svg class="ic"><use href="#i-key"></use></svg> Пароли</button>
+<button class="isec-link" data-isec="experimental"><svg class="ic"><use href="#i-dice"></use></svg> Экспериментальные</button>
+<!-- Расширения: пункт меню спрятан (юзер, сессия 111) — вернём
                    вместе с расширениями v2. -->
-              <!-- <button class="isec-link" data-isec="extensions"><svg class="ic"><use href="#i-puzzle"/></svg> Расширения</button> -->
-              <div class="isec-search-wrap">
-                <svg class="ic isec-search-icon"><use href="#i-search"/></svg>
-                <input id="settingsSearch" class="isec-search" type="text" placeholder="Поиск…" autocomplete="off" spellcheck="false" />
-              </div>
-            </nav>
-            <div class="isec-body">
-
-              <section id="settings" class="panel internal-page active" data-searchable>
-                <h2 class="internal-title">Настройки</h2>
-
-                <p class="panel-subtitle">Тема и оформление</p>
-                <p class="hint">Выбор чёрной/белой темы, акценты, шрифты, фон, и кастомная тема переехали на вкладку «🎨 Оформление».</p>
-
-                <p class="panel-subtitle">Профили</p>
-                <ul id="profilesList" class="list"></ul>
-                <details class="add-form">
-                  <summary>+ Новый профиль</summary>
-                  <input id="newProfileName" placeholder="Имя профиля" />
-                  <label class="checkbox-row">
-                    <input type="checkbox" id="newProfileAnon" />
+<!-- <button class="isec-link" data-isec="extensions"><svg class="ic"><use href="#i-puzzle"/></svg> Расширения</button> -->
+<div class="isec-search-wrap">
+<svg class="ic isec-search-icon"><use href="#i-search"></use></svg>
+<input autocomplete="off" class="isec-search" id="settingsSearch" placeholder="Поиск…" spellcheck="false" type="text"/>
+</div>
+</nav>
+<div class="isec-body">
+<section class="panel internal-page active" data-searchable="" id="settings">
+<h2 class="internal-title">Настройки</h2>
+<p class="panel-subtitle">Тема и оформление</p>
+<p class="hint">Выбор чёрной/белой темы, акценты, шрифты, фон, и кастомная тема переехали на вкладку «🎨 Оформление».</p>
+<p class="panel-subtitle">Профили</p>
+<ul class="list" id="profilesList"></ul>
+<details class="add-form">
+<summary>+ Новый профиль</summary>
+<input id="newProfileName" placeholder="Имя профиля"/>
+<label class="checkbox-row">
+<input id="newProfileAnon" type="checkbox"/>
                     Анонимный (временный, история не сохраняется)
                   </label>
-                  <button id="createProfileBtn">Создать</button>
-                </details>
-
-                <p class="panel-subtitle">Приватность текущего профиля</p>
-                <div class="badge-row" id="privacyBadges"></div>
-                <button id="historyClearBtn2" class="ghost-btn">Очистить историю</button>
-
-                <p class="panel-subtitle">Поиск</p>
-                <div class="row">
-                  <select id="searchEngineSelect">
-                    <option value="duckduckgo">DuckDuckGo</option>
-                    <option value="google">Google</option>
-                    <option value="bing">Bing</option>
-                    <option value="startpage">Startpage</option>
-                  </select>
-                </div>
-                <p class="hint">Используется, когда в адресную строку введён не URL, а поисковый запрос.</p>
-
-                <p class="panel-subtitle">Загрузки</p>
-                <div class="pz-row" style="flex-direction:column;align-items:stretch;gap:6px">
-                  <span>Папка сохранения файлов</span>
-                  <input id="dlDirInput" type="text" placeholder="По умолчанию — Загрузки Windows" style="font-family:var(--font-mono);font-size:11px" />
-                  <div style="display:flex;gap:6px">
-                    <button id="dlDirSave" class="ghost-btn small">Сохранить</button>
-                    <button id="dlDirClear" class="ghost-btn small">По умолчанию</button>
-                    <button id="dlDirOpen" class="ghost-btn small">Открыть</button>
-                  </div>
-                </div>
-
-                <p class="panel-subtitle">Сеть и прокси</p>
-                <div class="row">
-                  <select id="dnsModeSelect">
-                    <option value="System">Системный DNS (незашифрованный)</option>
-                    <option value="Custom">Свой DNS</option>
-                    <option value="Doh">DNS over HTTPS</option>
-                    <option value="Dot">DNS over TLS</option>
-                  </select>
-                </div>
-                <input id="dohUrlInput" type="text" placeholder="https://dns.quad9.net/dns-query" />
-                <p class="panel-subtitle">Proxy-цепочка (до 3 хопов)</p>
-                <div class="row">
-                  <select id="proxyTypeSelect">
-                    <option value="">Без прокси</option>
-                    <option value="Socks5">SOCKS5</option>
-                    <option value="Http">HTTP</option>
-                    <option value="Https">HTTPS</option>
-                  </select>
-                </div>
-                <input id="proxyHostInput" type="text" placeholder="host (например 127.0.0.1)" />
-                <input id="proxyPortInput" type="text" inputmode="numeric" placeholder="порт" />
-                <button id="netSaveBtn">Сохранить настройки сети</button>
-
-                <details class="add-form">
-                  <summary>Диагностика сети и маршрут</summary>
-                  <div class="row" style="margin-top:10px">
-                    <input id="routeHostInput" type="text" placeholder="example.com" />
-                    <button id="routePreviewBtn">Показать маршрут</button>
-                  </div>
-                  <ul id="routePreview" class="list"></ul>
-                  <button id="netDiagBtn" class="ghost-btn">Проверить соединение</button>
-                  <ul id="diagList" class="list"></ul>
-                </details>
-
-                <p class="panel-subtitle">Обновления</p>
-                <div class="row">
-                  <span id="updVerLabel" class="hint">Установлена версия: …</span>
-                  <button id="updCheckBtn">Проверить обновления</button>
-                </div>
-                <label class="row" style="gap:8px;align-items:center;cursor:pointer;margin-top:6px">
-                  <input type="checkbox" id="updAutoChk" />
-                  <span>Проверять обновления при запуске</span>
-                </label>
-              </section>
-
-              <section id="privacy" class="panel internal-page" data-searchable>
-                <h2 class="internal-title">🛡 Приватность</h2>
-
-                <p class="panel-subtitle">Уровень защиты (для текущего профиля)</p>
-                <div class="row">
-                  <select id="privacyLevelSelect">
-                    <option value="Standard">Standard — базовый</option>
-                    <option value="Balanced">Balanced — сбалансированный</option>
-                    <option value="Strict">Strict — строгий</option>
-                    <option value="Maximum">Maximum — максимум</option>
-                    <option value="Custom">Custom — свой</option>
-                  </select>
-                </div>
-                <button id="emergencyBtn" class="ghost-btn danger">🚨 Emergency Privacy Mode</button>
-
-                <p class="panel-subtitle">Блокировка (переключатели Custom)</p>
-                <label class="checkbox-row"><input type="checkbox" id="flagTrackers" /> Блокировать трекеры</label>
-                <label class="checkbox-row"><input type="checkbox" id="flagAds" /> Блокировать рекламу</label>
-                <label class="checkbox-row"><input type="checkbox" id="flagFpScripts" /> Блокировать fingerprint-скрипты</label>
-                <label class="checkbox-row"><input type="checkbox" id="flagThirdPartyCookies" /> Сторонние cookies — блок</label>
-                <label class="checkbox-row"><input type="checkbox" id="flagHttpsOnly" /> HTTPS-only режим</label>
-                <label class="checkbox-row"><input type="checkbox" id="flagClearOnExit" /> Чистить cookies при выходе</label>
-                <div class="row">
-                  <select id="webrtcSelect">
-                    <option value="Enabled">WebRTC: включён</option>
-                    <option value="HidePublicIps">WebRTC: скрыть публичные IP</option>
-                    <option value="Disabled">WebRTC: выключен</option>
-                  </select>
-                </div>
-                <p class="hint">Применение к трафику: домены режет встроенный прокси; HTTPS-only апгрейдит http→https;
+<button id="createProfileBtn">Создать</button>
+</details>
+<p class="panel-subtitle">Приватность текущего профиля</p>
+<div class="badge-row" id="privacyBadges"></div>
+<button class="ghost-btn" id="historyClearBtn2">Очистить историю</button>
+<p class="panel-subtitle">Поиск</p>
+<div class="row">
+<select id="searchEngineSelect">
+<option value="duckduckgo">DuckDuckGo</option>
+<option value="google">Google</option>
+<option value="bing">Bing</option>
+<option value="startpage">Startpage</option>
+</select>
+</div>
+<p class="hint">Используется, когда в адресную строку введён не URL, а поисковый запрос.</p>
+<p class="panel-subtitle">Загрузки</p>
+<div class="pz-row" style="flex-direction:column;align-items:stretch;gap:6px">
+<span>Папка сохранения файлов</span>
+<input id="dlDirInput" placeholder="По умолчанию — Загрузки Windows" style="font-family:var(--font-mono);font-size:11px" type="text"/>
+<div style="display:flex;gap:6px">
+<button class="ghost-btn small" id="dlDirSave">Сохранить</button>
+<button class="ghost-btn small" id="dlDirClear">По умолчанию</button>
+<button class="ghost-btn small" id="dlDirOpen">Открыть</button>
+</div>
+</div>
+<p class="panel-subtitle">Сеть и прокси</p>
+<div class="row">
+<select id="dnsModeSelect">
+<option value="System">Системный DNS (незашифрованный)</option>
+<option value="Custom">Свой DNS</option>
+<option value="Doh">DNS over HTTPS</option>
+<option value="Dot">DNS over TLS</option>
+</select>
+</div>
+<input id="dohUrlInput" placeholder="https://dns.quad9.net/dns-query" type="text"/>
+<p class="panel-subtitle">Proxy-цепочка (до 3 хопов)</p>
+<div class="row">
+<select id="proxyTypeSelect">
+<option value="">Без прокси</option>
+<option value="Socks5">SOCKS5</option>
+<option value="Http">HTTP</option>
+<option value="Https">HTTPS</option>
+</select>
+</div>
+<input id="proxyHostInput" placeholder="host (например 127.0.0.1)" type="text"/>
+<input id="proxyPortInput" inputmode="numeric" placeholder="порт" type="text"/>
+<button id="netSaveBtn">Сохранить настройки сети</button>
+<details class="add-form">
+<summary>Диагностика сети и маршрут</summary>
+<div class="row" style="margin-top:10px">
+<input id="routeHostInput" placeholder="example.com" type="text"/>
+<button id="routePreviewBtn">Показать маршрут</button>
+</div>
+<ul class="list" id="routePreview"></ul>
+<button class="ghost-btn" id="netDiagBtn">Проверить соединение</button>
+<ul class="list" id="diagList"></ul>
+</details>
+<p class="panel-subtitle">Обновления</p>
+<div class="row">
+<span class="hint" id="updVerLabel">Установлена версия: …</span>
+<button id="updCheckBtn">Проверить обновления</button>
+</div>
+<label class="row" style="gap:8px;align-items:center;cursor:pointer;margin-top:6px">
+<input id="updAutoChk" type="checkbox"/>
+<span>Проверять обновления при запуске</span>
+</label>
+</section>
+<section class="panel internal-page" data-searchable="" id="privacy">
+<h2 class="internal-title">🛡 Приватность</h2>
+<p class="panel-subtitle">Уровень защиты (для текущего профиля)</p>
+<div class="row">
+<select id="privacyLevelSelect">
+<option value="Standard">Standard — базовый</option>
+<option value="Balanced">Balanced — сбалансированный</option>
+<option value="Strict">Strict — строгий</option>
+<option value="Maximum">Maximum — максимум</option>
+<option value="Custom">Custom — свой</option>
+</select>
+</div>
+<button class="ghost-btn danger" id="emergencyBtn">🚨 Emergency Privacy Mode</button>
+<p class="panel-subtitle">Блокировка (переключатели Custom)</p>
+<label class="checkbox-row"><input id="flagTrackers" type="checkbox"/> Блокировать трекеры</label>
+<label class="checkbox-row"><input id="flagAds" type="checkbox"/> Блокировать рекламу</label>
+<label class="checkbox-row"><input id="flagFpScripts" type="checkbox"/> Блокировать fingerprint-скрипты</label>
+<label class="checkbox-row"><input id="flagThirdPartyCookies" type="checkbox"/> Сторонние cookies — блок</label>
+<label class="checkbox-row"><input id="flagHttpsOnly" type="checkbox"/> HTTPS-only режим</label>
+<label class="checkbox-row"><input id="flagClearOnExit" type="checkbox"/> Чистить cookies при выходе</label>
+<div class="row">
+<select id="webrtcSelect">
+<option value="Enabled">WebRTC: включён</option>
+<option value="HidePublicIps">WebRTC: скрыть публичные IP</option>
+<option value="Disabled">WebRTC: выключен</option>
+</select>
+</div>
+<p class="hint">Применение к трафику: домены режет встроенный прокси; HTTPS-only апгрейдит http→https;
                   сторонние cookies блокируются в сети (http) и в кросс-доменных фреймах (шим);
                   WebRTC: UDP вне прокси запрещён всегда; Referer обрезается по политике.
-                  Изменения шима действуют во вкладках, созданных после смены политики.</p>
-                <p class="hint" id="enforceHint"></p>
+                  Изменения шима действуют во вкладках, созданных после смены политики — чтобы
+                  применить блокировку рекламы/трекеров к уже открытым вкладкам, нажмите «Применить».</p>
+<button class="ghost-btn" id="privacyApplyBtn">↻ Применить изменения к открытым вкладкам</button>
+<p class="hint" id="enforceHint"></p>
+<p class="panel-subtitle">Статистика и аудит</p>
+<ul class="list" id="auditList"></ul>
+<p class="hint" id="blockedCounter"></p>
+<p class="panel-subtitle">Свой список блокировки</p>
+<details class="add-form">
+<summary>+ Добавить список доменов</summary>
+<input id="blocklistName" placeholder="Название списка"/>
+<textarea id="blocklistText" placeholder="tracker.example
+0.0.0.0 ads.example" rows="4"></textarea>
+<button id="blocklistAddBtn">Добавить</button>
+</details>
+<p class="panel-subtitle">Готовые списки в один клик (расширение-класс)</p>
+<p class="hint">Полные фильтры уровня uBlock/AdGuard: EasyList (реклама), EasyPrivacy (трекеры) и AdGuard DNS (реклама+трекеры+фрод). Скачиваются один раз и хранятся локально; повторный клик обновляет список.</p>
+<div class="row" style="flex-wrap:wrap">
+<button class="ghost-btn" id="presetEasyList" title="https://easylist.to/easylist/easylist.txt">📥 EasyList</button>
+<button class="ghost-btn" id="presetEasyPrivacy" title="https://easylist.to/easylist/easyprivacy.txt">📥 EasyPrivacy</button>
+<button class="ghost-btn" id="presetAdGuard" title="https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt">📥 AdGuard DNS</button>
+</div>
+<p class="panel-subtitle">Исключения сайтов</p>
+<div class="row">
+<input id="overrideHostInput" placeholder="example.com" style="flex:1"/>
+<button id="overrideAllowBtn">🛡 Разрешить трекеры</button>
+</div>
+<ul class="list" id="siteOverridesList"></ul>
+<p class="hint">Домен и все его поддомены исключаются из сетевой блокировки — действует сразу.</p>
+</section>
+<section class="panel internal-page appearance-page" data-searchable="" id="appearance">
+<div class="appearance-titlebar"><div><h2 class="internal-title">Оформление</h2><p class="hint">Настройки сгруппированы по назначению и применяются сразу.</p></div><button class="ghost-btn" id="pzReset">Сбросить всё</button></div>
+<div class="appearance-group theme-studio"><h3>Темы и цвета</h3><p class="group-description">Выберите готовый стиль или соберите свой. Цвета интерфейса и живого фона синхронизируются.</p><div aria-label="Режим темы" class="theme-mode" role="group"><button class="theme-mode-btn" data-theme-choice="dark" type="button">● Тёмная</button><button class="theme-mode-btn" data-theme-choice="light" type="button">○ Светлая</button><button class="theme-mode-btn" data-theme-choice="system" type="button">◐ Как в Windows</button></div><div class="theme-gallery"><button class="theme-card as-preset" data-apb-preset="cosmos" style="--preview-a:#8b5cf6;--preview-b:#22d3ee" type="button"><i></i><span><b>Космос</b><small>Network · фиолетовый</small></span></button><button class="theme-card as-preset" data-apb-preset="aurora" style="--preview-a:#20e3a2;--preview-b:#7868ff" type="button"><i></i><span><b>Аврора</b><small>Мягкое сияние</small></span></button><button class="theme-card as-preset" data-apb-preset="sunset" style="--preview-a:#ff568d;--preview-b:#ffb45f" type="button"><i></i><span><b>Закат</b><small>Тёплый градиент</small></span></button><button class="theme-card as-preset" data-apb-preset="ocean" style="--preview-a:#287dff;--preview-b:#39ecff" type="button"><i></i><span><b>Океан</b><small>Чистые волны</small></span></button><button class="theme-card as-preset" data-apb-preset="forest" style="--preview-a:#22c55e;--preview-b:#84cc16" type="button"><i></i><span><b>Лес</b><small>Глубокий зелёный</small></span></button><button class="theme-card as-preset" data-apb-preset="rose" style="--preview-a:#ec4899;--preview-b:#38bdf8" type="button"><i></i><span><b>Неон Rose</b><small>Розовый и голубой</small></span></button><button class="theme-card as-preset" data-apb-preset="ember" style="--preview-a:#f97316;--preview-b:#ef4444" type="button"><i></i><span><b>Ember</b><small>Оранжевый жар</small></span></button><button class="theme-card as-preset" data-apb-preset="minimal" style="--preview-a:#8995ff;--preview-b:#55c9ff" type="button"><i></i><span><b>Минимал</b><small>Без живого фона</small></span></button></div><button class="theme-random ghost-btn" id="apFxRandom" type="button">⤨ Случайная гармоничная палитра</button><details class="theme-advanced"><summary>Точная настройка цветов</summary><div class="color-grid"><label><span>Основной фон</span><input id="thBg" type="color" value="#000000"/></label><label><span>Фон панелей</span><input id="thSoft" type="color" value="#0b0b0d"/></label><label><span>Карточки</span><input id="thSurface" type="color" value="#1a1a1e"/></label><label><span>Наведение</span><input id="thSurface2" type="color" value="#232329"/></label><label><span>Границы</span><input id="thBorder" type="color" value="#333338"/></label><label><span>Основной текст</span><input id="thText" type="color" value="#f2f2f4"/></label><label><span>Вторичный текст</span><input id="thTextDim" type="color" value="#a6a6b0"/></label><label><span>Ссылки</span><input id="thLink" type="color" value="#7fb0ff"/></label><label><span>Акцент</span><input id="thAccent" type="color" value="#7fb0ff"/></label><label><span>Текст на акценте</span><input id="thOnAccent" type="color" value="#08080a"/></label><label><span>Ошибки</span><input id="thDanger" type="color" value="#ff6575"/></label><label><span>Успех</span><input id="thSuccess" type="color" value="#43c17a"/></label><label><span>Предупреждения</span><input id="thWarning" type="color" value="#e5b04a"/></label><label><span>Выделение</span><input id="thSelection" type="color" value="#7fb0ff"/></label><label><span>Тени</span><input id="thShadow" type="color" value="#000000"/></label><label><span>Главный акцент</span><input id="pzAccent" type="color" value="#8a8a92"/></label></div><div class="appearance-actions"><button class="primary-btn visible-action" id="thApply">Применить цвета</button><button class="ghost-btn small visible-action" id="thReset">Сбросить цвета</button><button class="ghost-btn small visible-action" id="thPresetSave">＋ Сохранить как тему</button><select id="thPresetSel"></select><button class="ghost-btn small visible-action" id="thPresetLoad">Применить выбранную</button><button class="ghost-btn small visible-action" id="thPresetDel">Удалить</button></div></details><div class="theme-transfer"><button class="ghost-btn small visible-action" id="skinExportBtn">⬆ Экспорт темы</button><button class="ghost-btn small visible-action" id="skinImportBtn">⬇ Импорт темы</button><input accept=".apbtheme,.json,application/json" id="skinImportFile" style="display:none" type="file"/></div></div>
 
-                <p class="panel-subtitle">Статистика и аудит</p>
-                <ul id="auditList" class="list"></ul>
-                <p class="hint" id="blockedCounter"></p>
-
-                <p class="panel-subtitle">Свой список блокировки</p>
-                <details class="add-form">
-                  <summary>+ Добавить список доменов</summary>
-                  <input id="blocklistName" placeholder="Название списка" />
-                  <textarea id="blocklistText" rows="4" placeholder="tracker.example&#10;0.0.0.0 ads.example"></textarea>
-                  <button id="blocklistAddBtn">Добавить</button>
-                </details>
-
-                <p class="panel-subtitle">Исключения сайтов</p>
-                <div class="row">
-                  <input id="overrideHostInput" placeholder="example.com" style="flex:1" />
-                  <button id="overrideAllowBtn">🛡 Разрешить трекеры</button>
-                </div>
-                <ul id="siteOverridesList" class="list"></ul>
-                <p class="hint">Домен и все его поддомены исключаются из сетевой блокировки — действует сразу.</p>
-              </section>
-
-              <section id="appearance" class="panel internal-page" data-searchable>
-                <h2 class="internal-title">Оформление</h2>
-
-                <p class="panel-subtitle">Профиль оформления</p>
-                <div class="pz-row" style="flex-wrap:wrap;gap:6px;justify-content:flex-start">
-                  <button id="skinExportBtn" class="ghost-btn small">⬆ Экспорт (.apbtheme)</button>
-                  <button id="skinImportBtn" class="ghost-btn small">⬇ Импорт…</button>
-                  <input type="file" id="skinImportFile" accept=".apbtheme,.json,application/json" style="display:none" />
-                  <button id="tourReplayBtn" class="ghost-btn small">❓ Подсказки по браузеру</button>
-                </div>
-
-                <p class="panel-subtitle">Язык интерфейса</p>
-                <div class="pz-row"><span>Язык (Language)</span>
-                  <select id="apLangSel">
-                    <option value="ru">Русский</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
-
-                <p class="panel-subtitle">Тема</p>
-                <div class="theme-buttons">
-                  <button id="themeDarkBtn" data-theme-choice="dark">Чёрная тема</button>
-                  <button id="themeLightBtn" data-theme-choice="light">Белая тема</button>
-                </div>
-
-                <p class="panel-subtitle">Звуки</p>
-                <label class="pz-row"><span>Звуки интерфейса (граф, действия)</span><input type="checkbox" id="apSound" checked /></label>
-
-                <p class="panel-subtitle">Персонализация</p>
-                <div class="pz-grid">
-                  <label class="pz-row"><span>Акцентный цвет</span><input type="color" id="pzAccent" value="#8a8a92" /></label>
-                  <label class="pz-row"><span>Скругления углов</span><input type="range" id="pzRadius" min="0" max="22" value="12" /></label>
-                  <label class="pz-row"><span>Плотность интерфейса</span>
-                    <select id="pzDensity">
-                      <option value="compact">Компактная</option>
-                      <option value="normal" selected>Обычная</option>
-                      <option value="spacious">Просторная</option>
-                    </select>
-                  </label>
-                  <label class="pz-row"><span>Ширина боковой панели</span><input type="range" id="pzSidebar" min="180" max="320" value="232" /></label>
-                  <label class="pz-row"><span>Эффект стекла (blur)</span><input type="checkbox" id="pzGlass" checked /></label>
-                  <label class="pz-row"><span>Прозрачность стекла</span><input type="range" id="apGlassA" min="30" max="100" value="85" /></label>
-                  <label class="pz-row"><span>Анимации</span><input type="checkbox" id="pzMotion" checked /></label>
-                </div>
-                <button id="pzReset" class="ghost-btn">Сбросить персонализацию</button>
-
-                <p class="panel-subtitle">Раскладка настроек</p>
-                <div class="pz-grid">
-                  <label class="pz-row"><span>Два столбца настроек</span><input type="checkbox" id="apSettingsCols" /></label>
-                  <label class="pz-row" id="apSettingsWRow" style="max-width:460px"><span>Ширина блоков настроек <span id="apSettingsWVal" class="hint" style="margin:0">640px</span></span><input type="range" id="apSettingsW" min="560" max="1200" value="640" /></label>
-                </div>
-                <p class="hint">Два столбца раскладывают поля настроек компактнее; ширина блока управляет их шириной.</p>
-
-                <p class="panel-subtitle">Вкладки</p>
-                <div class="pz-row"><span>Расположение вкладок</span>
-                  <select id="apTabsPos">
-                    <option value="left">Слева (боковая панель)</option>
-                    <option value="top">Сверху (как у всех)</option>
-                  </select>
-                </div>
-                <div class="pz-row"><span>Сторона боковой панели вкладок</span>
-                  <select id="apSidebarSide">
-                    <option value="left">Слева</option>
-                    <option value="right">Справа</option>
-                  </select>
-                </div>
-                <div class="pz-row"><span>Сторона панели (закладки/история/заметки)</span>
-                  <select id="apPanelSide">
-                    <option value="left">Слева</option>
-                    <option value="right">Справа</option>
-                  </select>
-                </div>
-                <label class="pz-row"><span>Скрыть инструменты слева снизу</span><input type="checkbox" id="apHideTools" /></label>
-                <label class="pz-row"><span>Открывать свёрнутую панель при наведении</span><input type="checkbox" id="apSideHover" /></label>
-                <label class="pz-row"><span>Счётчик вкладок на воркспейсах</span><input type="checkbox" id="apWsCount" checked /></label>
-
-                <p class="panel-subtitle">Шрифт интерфейса</p>
-                <div class="pz-row"><span>Шрифт</span>
-                  <select id="apFontSel">
-                    <option value="system">Системный</option>
-                    <option value="segoe">Segoe UI</option>
-                    <option value="arial">Arial</option>
-                    <option value="georgia">Georgia (serif)</option>
-                    <option value="mono">Consolas (mono)</option>
-                  </select>
-                </div>
-                <div class="pz-row"><span>Свой шрифт (файл .ttf/.otf/.woff)</span>
-                  <button id="apFontPickBtn" class="ghost-btn small">📁 Выбрать…</button>
-                  <button id="apFontResetBtn" class="ghost-btn small">✕</button>
-                  <span id="apFontName" class="hint" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-                  <input type="file" id="apFontPick" accept=".ttf,.otf,.woff,.woff2" style="display:none" />
-                </div>
-                <div class="pz-row"><span>Шрифт заголовков</span>
-                  <select id="apHeadFontSel">
-                    <option value="">Как основной</option>
-                    <option value="system">Системный</option>
-                    <option value="segoe">Segoe UI</option>
-                    <option value="georgia">Georgia (serif)</option>
-                    <option value="mono">Consolas (mono)</option>
-                  </select>
-                </div>
-                <label class="pz-row"><span>Размер шрифта</span><input type="range" id="apFontSize" min="12" max="16" value="13" /></label>
-
-                <p class="panel-subtitle">Своя тема (переопределяет чёрную/белую)</p>
-                <div class="pz-grid">
-                  <label class="pz-row"><span>Фон интерфейса</span><input type="color" id="thBg" value="#000000" /></label>
-                  <label class="pz-row"><span>Панели и шапки</span><input type="color" id="thSoft" value="#0b0b0d" /></label>
-                  <label class="pz-row"><span>Карточки и списки</span><input type="color" id="thSurface" value="#1a1a1e" /></label>
-                  <label class="pz-row"><span>Наведение и активные</span><input type="color" id="thSurface2" value="#232329" /></label>
-                  <label class="pz-row"><span>Границы</span><input type="color" id="thBorder" value="#333338" /></label>
-                  <label class="pz-row"><span>Текст</span><input type="color" id="thText" value="#f2f2f4" /></label>
-                  <label class="pz-row"><span>Вторичный текст</span><input type="color" id="thTextDim" value="#a6a6b0" /></label>
-                  <label class="pz-row"><span>Ссылки и акцент-текст</span><input type="color" id="thLink" value="#7fb0ff" /></label>
-                  <label class="pz-row"><span>Акцент</span><input type="color" id="thAccent" value="#7fb0ff" /></label>
-                  <label class="pz-row"><span>Ошибки/удаление</span><input type="color" id="thDanger" value="#ff6575" /></label>
-                </div>
-                <div class="pz-row" style="flex-wrap:wrap;gap:6px;justify-content:flex-start">
-                  <button id="thApply" class="ghost-btn small">Применить цвета</button>
-                  <button id="thReset" class="ghost-btn small">Сбросить</button>
-                  <button id="thPresetSave" class="ghost-btn small">💾 Сохранить как…</button>
-                  <select id="thPresetSel" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 6px"></select>
-                  <button id="thPresetLoad" class="ghost-btn small">Загрузить</button>
-                  <button id="thPresetDel" class="ghost-btn small">Удалить</button>
-                </div>
-
-                <p class="panel-subtitle">Фон интерфейса (весь браузер)</p>
-                <div class="pz-grid">
-                  <label class="pz-row"><span>Цвет фона</span><input type="color" id="apBgColor" /></label>
-                  <label class="pz-row"><span>Затемнение картинки</span><input type="range" id="apBgDim" min="0" max="80" value="35" /></label>
-                </div>
-                <div class="pz-row"><span>Картинка-фон</span>
-                  <input type="text" id="apBgImg" placeholder="https://… .jpg/.gif" style="flex:1;max-width:200px" />
-                  <button id="apBgFileBtn" class="ghost-btn small">📁 С файла…</button>
-                  <input type="file" id="apBgFile" accept="image/*" style="display:none" />
-                </div>
-                <div class="pz-grid">
-                  <label class="pz-row"><span>Размещение</span>
-                    <select id="apBgFit">
-                      <option value="cover">Растянуть (cover)</option>
-                      <option value="contain">Вписать (contain)</option>
-                      <option value="auto">Реальный размер</option>
-                      <option value="repeat">Замостить</option>
-                    </select>
-                  </label>
-                  <label class="pz-row"><span>Размытие (блюр)</span><input type="range" id="apBgBlur" min="0" max="30" value="0" /></label>
-                </div>
-                <label class="pz-row"><span>Только главная (не весь интерфейс)</span><input type="checkbox" id="apBgHomeOnly" /></label>
-                <button id="apBgReset" class="ghost-btn">Сбросить фон</button>
-                <p class="hint">Настройки применяются мгновенно и сохраняются в браузере.</p>
-              </section>
-
-              
-
-<!-- Made by MrDuck -->
-              <section id="history" class="panel internal-page wide-page">
-                <h2 class="internal-title">История</h2>
-                <div class="row hist-tools">
-                  <select id="histScopeSelect" title="Чья история показывается">
-                    <option value="current">Текущий профиль</option>
-                    <option value="all">Все профили</option>
-                  </select>
-                  <input id="histFilterInput" type="text" placeholder="Фильтр по названию, URL или профилю…" />
-                </div>
-                <div class="hist-tool-row">
-                  <button id="histReloadBtn" class="ghost-btn">Обновить</button>
-                  <button id="histClearActiveBtn" class="ghost-btn danger-ghost">Очистить историю текущего профиля</button>
-                  <span class="hint" id="histStats"></span>
-                </div>
-                <div class="badge-row" id="histSummary"></div>
-                <ul id="histAllList" class="list hist-list"></ul>
-                <p class="hint">Анонимные профили историю не пишут. Записи сгруппированы по дням.</p>
-              </section>
-
-              <section id="vault" class="panel internal-page wide-page vault-page">
-                <div class="pw-head">
-                  <h2 class="internal-title" style="margin:0">Пароли</h2>
-                  <button id="vaultLockBtn" class="ghost-btn hidden"><svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-lock"/></svg> Заблокировать</button>
-                </div>
-
-                <!-- Gate: create / unlock, centered like Comet -->
-                <div id="vaultSetupBox" class="pw-gate">
-                  <div class="pw-lock-icon">🔑</div>
-                  <h3 id="vaultStatusLine" class="pw-gate-title">Сейф не создан</h3>
-                  <p class="hint" style="text-align:center;max-width:360px;margin:0 auto 18px">
-                    Сейф шифрует пароли AES-256-GCM с ключом Argon2id.<br>Данные никогда не покидают этот компьютер.
-                  </p>
-                  <input id="vaultPassInput" type="password" placeholder="Парольная фраза (минимум 8 символов)" />
-                  <div class="theme-buttons" style="max-width:340px;margin:12px auto 0">
-                    <button id="vaultCreateBtn">Создать сейф</button>
-                    <button id="vaultUnlockBtn">Разблокировать</button>
-                  </div>
-                </div>
-
-                <!-- Unlocked: search + password cards -->
-                <div id="vaultContentBox" class="hidden">
-                  <div class="pw-toolbar">
-                    <input id="vaultSearch" type="text" placeholder="Поиск по названию, логину, URL…" />
-                    <button id="pwGenBtn" class="icon-btn small" title="Генератор паролей"><svg class="ic"><use href="#i-dice"/></svg></button>
-                    <button id="pwImportBtn" class="ghost-btn small" title="Импорт из CSV (Chrome, Firefox, Bitwarden)">📥 Импорт</button>
-                    <button id="pwExportBtn" class="ghost-btn small" title="Экспорт в CSV">💾 Экспорт</button>
-                    <input type="file" id="pwImportFile" accept=".csv,text/csv" style="display:none" />
-                  </div>
-                  <div id="pwGenRow" class="hidden pw-gen-row">
-                    <span id="pwGenOut" class="mono"></span>
-                    <button id="pwGenCopy" class="ghost-btn small">Копировать</button>
-                    <button id="pwGenAgain" class="ghost-btn small">Ещё раз (20 симв.)</button>
-                  </div>
-                  <div class="pw-grid" id="vaultEntries"></div>
-
-                  <details class="add-form" style="margin-top:18px;max-width:520px">
-                    <summary>+ Добавить запись</summary>
-                    <input id="veTitle" placeholder="Название (GitHub)" />
-                    <input id="veUser" placeholder="Логин" />
-                    <input id="vePass" type="password" placeholder="Пароль" autocomplete="new-password" />
-                    <input id="veUrl" placeholder="URL (необязательно)" />
-                    <button id="veAddBtn">Сохранить запись</button>
-                  </details>
-                </div>
-              </section>
-
-              <!-- РАСШИРЕНИЯ СПРЯТАНЫ (юзер, сессия 111: «пока удали или
+<div class="appearance-group"><h3>Фон браузера</h3><p class="group-description">Цвет, живой фон и собственное изображение находятся в одном разделе.</p><div class="appearance-grid"><label class="setting-row"><span><b>Тип фона</b><small>Цвет, живой эффект или изображение</small></span><select id="apBgType"><option value="off">Без анимации</option><option value="network">Network</option><option value="aurora">Aurora</option><option value="gradient">Mesh gradient</option><option value="waves">Waves</option><option value="particles">Particles</option><option value="image">Изображение</option></select></label><label class="setting-row"><span><b>Базовый цвет</b></span><input id="apBgColor" type="color"/></label><label class="setting-row"><span><b>Первый цвет эффекта</b></span><input id="apPrimary" type="color"/></label><label class="setting-row"><span><b>Второй цвет эффекта</b></span><input id="apSecondary" type="color"/></label><label class="setting-row"><span><b>Яркость эффекта</b></span><input id="apFxIntensity" max="100" min="10" type="range"/></label><label class="setting-row"><span><b>Скорость эффекта</b></span><input id="apFxSpeed" max="140" min="10" type="range"/></label><label class="setting-row"><span><b>Количество объектов</b><small id="apFxDensityValue">Объектов: —</small></span><input id="apFxDensity" max="200" min="20" step="5" type="range"/></label><label class="setting-row"><span><b>Реакция на курсор</b></span><input id="apFxInteractive" type="checkbox"/></label></div><div class="background-image-options hidden" id="backgroundImageOptions"><div class="background-file-row"><input id="apBgImg" placeholder="Ссылка на изображение или GIF" type="text"/><button class="ghost-btn small" id="apBgFileBtn">📁 Выбрать файл</button><input accept="image/*" id="apBgFile" style="display:none" type="file"/></div><div class="appearance-grid compact-grid"><label class="setting-row"><span><b>Размещение изображения</b></span><select id="apBgFit"><option value="cover">Заполнить</option><option value="contain">Вписать</option><option value="auto">Реальный размер</option><option value="repeat">Замостить</option></select></label><label class="setting-row"><span><b>Затемнение</b></span><input id="apBgDim" max="80" min="0" type="range" value="35"/></label><label class="setting-row"><span><b>Размытие изображения</b></span><input id="apBgBlur" max="30" min="0" type="range" value="0"/></label><label class="setting-row"><span><b>Область изображения</b></span><select id="apBgScope"><option value="all">Весь браузер</option><option value="home">Только главная</option></select><input id="apBgHomeOnly" style="display:none" type="checkbox"/></label></div></div><button class="ghost-btn small" id="apBgReset">Очистить фон</button></div><div class="appearance-group material-card attention-card material-locked"><h3>Прозрачность и материалы</h3><p class="material-status" id="materialStatus">Обычный режим: живой фон доступен.</p><div class="material-lockbar"><span class="material-lock-icon">🔒</span><span><b>Экспериментальная функция заблокирована</b><small>Разблокируйте только если готовы к визуальным сбоям.</small></span><button class="ghost-btn" id="materialUnlock" type="button">Разблокировать</button><button class="ghost-btn hidden" id="materialRelock" type="button">Заблокировать снова</button></div><p class="hint">Прозрачность выключена по умолчанию. Она приостанавливает живой фон; выключение прозрачности возвращает его.</p><p class="group-description">Эти параметры меняют только материал панелей и не затрагивают выбранные цвета.</p><div aria-disabled="true" class="appearance-grid" id="materialControls"><label class="setting-row"><span><b>Системный материал</b><small>Mica, Acrylic или Blur в Windows</small></span><select id="apWindowMode"><option value="off">Непрозрачный</option><option value="mica">Mica</option><option value="acrylic">Acrylic</option><option value="blur">Blur</option><option value="clear">Прозрачный</option></select></label><label class="setting-row"><span><b>Размывать панели</b><small>Не меняет палитру и фон</small></span><input checked="" id="pzGlass" type="checkbox"/></label><label class="setting-row"><span><b>Плотность панелей</b></span><input id="apSurfaceOpacity" max="100" min="20" type="range"/></label><label class="setting-row"><span><b>Сила размытия</b></span><input id="apSurfaceBlur" max="60" min="0" type="range"/></label><label class="setting-row"><span><b>Насыщенность материала</b></span><input id="apSurfaceSaturation" max="220" min="80" type="range"/></label></div></div>
+<div class="appearance-group"><h3>Панели браузера</h3><p class="group-description">Адресная строка — отдельная панель; вкладки можно разместить слева или сверху.</p><div class="appearance-grid"><label class="setting-row"><span><b>Расположение вкладок</b><small>Слева или отдельным верхним рядом</small></span><select id="apTabsPos"><option value="left">Слева</option><option value="top">Сверху</option></select></label><label class="setting-row"><span><b>Сторона боковой панели</b></span><select id="apSidebarSide"><option value="left">Слева</option><option value="right">Справа</option></select></label><label class="setting-row"><span><b>Ширина боковой панели</b></span><input id="pzSidebar" max="320" min="180" type="range" value="232"/></label><label class="setting-row"><span><b>Плотность интерфейса</b></span><select id="pzDensity"><option value="compact">Компактная</option><option value="normal">Обычная</option><option value="spacious">Просторная</option></select></label><label class="setting-row"><span><b>Скругления элементов</b></span><input id="pzRadius" max="22" min="0" type="range" value="12"/></label><label class="setting-row"><span><b>Показывать панель при наведении</b></span><input id="apSideHover" type="checkbox"/></label><label class="setting-row"><span><b>Счётчик вкладок</b></span><input checked="" id="apWsCount" type="checkbox"/></label><label class="setting-row"><span><b>Скрыть нижние инструменты</b></span><input id="apHideTools" type="checkbox"/></label></div></div>
+<div class="appearance-group"><h3>Текст и шрифты</h3><div class="appearance-grid"><label class="setting-row"><span><b>Шрифт интерфейса</b></span><select id="apFontSel"><option value="system">Системный</option><option value="segoe">Segoe UI</option><option value="arial">Arial</option><option value="georgia">Georgia</option><option value="mono">Consolas</option></select></label><label class="setting-row"><span><b>Шрифт заголовков</b></span><select id="apHeadFontSel"><option value="">Как основной</option><option value="system">Системный</option><option value="segoe">Segoe UI</option><option value="georgia">Georgia</option><option value="mono">Consolas</option></select></label><label class="setting-row"><span><b>Размер текста</b><small id="apFontSizeValue">13 px</small></span><input id="apFontSize" max="18" min="11" type="range" value="13"/></label></div><div class="appearance-actions"><button class="ghost-btn small visible-action" id="apFontPickBtn">📁 Загрузить шрифт</button><button class="ghost-btn small visible-action" id="apFontResetBtn">Сбросить шрифт</button><span class="hint" id="apFontName"></span><input accept=".ttf,.otf,.woff,.woff2" id="apFontPick" style="display:none" type="file"/></div></div>
+<div class="appearance-group"><h3>Анимации</h3><div class="appearance-grid"><label class="setting-row"><span><b>Анимации интерфейса</b><small>Переходы, появление карточек и микродвижения</small></span><input checked="" id="pzMotion" type="checkbox"/></label><label class="setting-row"><span><b>Интенсивность движения</b></span><input id="apMotionIntensity" max="140" min="0" type="range"/></label></div></div>
+<div class="appearance-group"><h3>Интерфейс</h3><div class="appearance-grid"><label class="setting-row"><span><b>Язык</b></span><select id="apLangSel"><option value="ru">Русский</option><option value="en">English</option></select></label><label class="setting-row"><span><b>Звуки интерфейса</b></span><input checked="" id="apSound" type="checkbox"/></label><label class="setting-row"><span><b>Строка поиска на главной</b><small>По центру экрана или сразу под приветствием</small></span><select id="apHomeSearchPos"><option value="top">Сверху</option><option value="center">По центру</option></select></label><label class="setting-row" id="apSettingsWRow"><span><b>Ширина настроек</b><small id="apSettingsWVal">640px</small></span><select id="apSettingsW"><option value="640">Компактная — 640 px</option><option value="840">Обычная — 840 px</option><option value="1040">Широкая — 1040 px</option><option value="1200">Максимальная — 1200 px</option></select></label></div><div class="appearance-actions"><button class="ghost-btn small visible-action" id="tourReplayBtn">❓ Повторить знакомство</button></div></div>
+</section>
+<section class="panel internal-page wide-page" id="history"><div class="history-hero"><div><span class="history-kicker">Локальная активность</span><h2 class="internal-title">История браузера</h2><p class="hint">Быстрый поиск по посещениям, профилям и доменам. Анонимные профили ничего не записывают.</p></div><button class="ghost-btn" id="histReloadBtn">↻ Обновить</button></div><div class="hist-insights" id="histInsights"><div><b>—</b><span>посещений</span></div><div><b>—</b><span>сегодня</span></div><div><b>—</b><span>сайтов</span></div><div><b>—</b><span>профилей</span></div></div><div class="history-commandbar"><div class="history-search"><span>⌕</span><input id="histFilterInput" placeholder="Название, адрес или профиль…" type="search"/><button aria-label="Очистить поиск" id="histSearchClear" type="button">×</button></div><select id="histPeriodSelect" title="Период"><option value="all">За всё время</option><option value="today">Сегодня</option><option value="7">7 дней</option><option value="30">30 дней</option></select><select id="histScopeSelect" title="Профили"><option value="current">Текущий профиль</option><option value="all">Все профили</option></select><select id="histSortSelect" title="Сортировка"><option value="new">Сначала новые</option><option value="old">Сначала старые</option><option value="site">По сайту</option></select></div><div class="hist-tool-row"><button class="ghost-btn danger-ghost" id="histClearActiveBtn">Очистить историю профиля</button><span class="hint" id="histStats"></span></div><div class="hist-top-sites" id="histSummary"></div><ul class="list hist-list history-timeline" id="histAllList"></ul></section>
+<section class="panel internal-page wide-page vault-page" id="vault">
+<div class="pw-head">
+<h2 class="internal-title" style="margin:0">Пароли</h2>
+<button class="ghost-btn hidden" id="vaultLockBtn"><svg class="ic" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-lock"></use></svg> Заблокировать</button>
+</div>
+<!-- Gate: create / unlock, centered like Comet -->
+<div class="pw-gate vault-gate" id="vaultSetupBox">
+<div class="vault-orbit"><span></span><span></span><span></span><div class="pw-lock-icon">⌾</div></div>
+<span class="vault-kicker">Локальный зашифрованный сейф</span>
+<h3 class="pw-gate-title" id="vaultStatusLine">Проверяем состояние…</h3>
+<p class="vault-explain" id="vaultExplain">AES-256-GCM · Argon2id · данные остаются на компьютере</p>
+<div class="vault-create-fields" id="vaultCreateFields">
+<label class="vault-field"><span>Мастер-фраза</span><input autocomplete="new-password" id="vaultPassInput" placeholder="Не менее 8 символов" type="password"/></label>
+<label class="vault-field"><span>Повторите мастер-фразу</span><input autocomplete="new-password" id="vaultPassConfirm" placeholder="Введите ещё раз" type="password"/></label>
+<div class="vault-strength"><i id="vaultStrengthBar"></i></div><small id="vaultStrengthText">Придумайте длинную уникальную фразу</small>
+<label class="vault-security-check"><input id="vaultSecurityCheck" type="checkbox"/> Я понимаю: восстановить забытую мастер-фразу невозможно</label>
+</div>
+<div class="vault-unlock-field hidden" id="vaultUnlockField"><label class="vault-field"><span>Мастер-фраза</span><input autocomplete="current-password" id="vaultUnlockInput" placeholder="Введите мастер-фразу" type="password"/></label></div>
+<div class="vault-actions"><button class="primary-btn" id="vaultCreateBtn">Создать защищённый сейф</button><button class="primary-btn hidden" id="vaultUnlockBtn">Разблокировать</button></div>
+<p class="vault-error" id="vaultGateError"></p>
+</div>
+<!-- Unlocked: search + password cards -->
+<div class="hidden" id="vaultContentBox">
+<div class="pw-toolbar">
+<input id="vaultSearch" placeholder="Поиск по названию, логину, URL…" type="text"/>
+<button class="icon-btn small" id="pwGenBtn" title="Генератор паролей"><svg class="ic"><use href="#i-dice"></use></svg></button>
+<button class="ghost-btn small" id="pwImportBtn" title="Импорт из CSV (Chrome, Firefox, Bitwarden)">📥 Импорт</button>
+<button class="ghost-btn small" id="pwBackupBtn" title="Создать локальную зашифрованную резервную копию">🛟 Бэкап</button>
+<button class="ghost-btn small" id="pwExportBtn" title="Экспортировать сейф без расшифровки">🔐 Зашифрованный экспорт</button>
+<input accept=".csv,text/csv" id="pwImportFile" style="display:none" type="file"/>
+</div>
+<div class="hidden pw-gen-row" id="pwGenRow">
+<span class="mono" id="pwGenOut"></span>
+<button class="ghost-btn small" id="pwGenCopy">Копировать</button>
+<button class="ghost-btn small" id="pwGenAgain">Ещё раз (20 симв.)</button>
+</div>
+<div class="vault-security-row"><label>Автоблокировка <select id="vaultAutoLock"><option value="60">1 минута</option><option value="300" selected>5 минут</option><option value="900">15 минут</option><option value="3600">1 час</option></select></label><span id="vaultCryptoStatus" role="status">Argon2id · AES-256-GCM</span></div>
+<div class="pw-grid" id="vaultEntries"></div>
+<details class="add-form" style="margin-top:18px;max-width:520px">
+<summary>+ Добавить запись</summary>
+<input id="veTitle" placeholder="Название (GitHub)"/>
+<input id="veUser" placeholder="Логин"/>
+<input autocomplete="new-password" id="vePass" placeholder="Пароль" type="password"/>
+<input id="veUrl" placeholder="URL (необязательно)"/>
+<button id="veAddBtn">Сохранить запись</button>
+</details>
+</div>
+</section>
+<section class="panel internal-page" data-searchable="" id="experimental">
+<h2 class="internal-title">Экспериментальные функции</h2>
+<p class="hint">Необязательные механики, которые ещё не стали настройками по умолчанию. Некоторые действуют только после перезапуска браузера.</p>
+<p class="panel-subtitle">Мультимедиа</p>
+<label class="checkbox-row"><input id="expAutoplay" type="checkbox"/> Разрешить автозапуск видео и музыки</label>
+<p class="hint">По умолчанию APB блокирует автозапуск: видео не стартуют сами, пока вы не кликнете. Включите — чтобы сайты снова запускали медиа сами. Действует после перезапуска.</p>
+<p class="panel-subtitle">Буфер обмена</p>
+<label class="checkbox-row"><input id="expClipboardSync" type="checkbox"/> Синхронизировать буфер обмена сайтов</label>
+<p class="hint">Перехватывает копирование на страницах (Ctrl+C / контекстное меню) и дополнительно пишет текст в системный буфер. Нужно, если скопированное иногда «пропадает» при быстром переключении в другое окно. Действует сразу.</p>
+</section>
+<!-- РАСШИРЕНИЯ СПРЯТАНЫ (юзер, сессия 111: «пока удали или
                    закомментируй»): рантайм v1 в бэкенде остаётся, UI вернём
                    вместе с расширениями v2. Для возврата: раскомментировать
                    блок + пункт «Расширения» в меню isec выше. -->
-              <!--
+<!--
               <section id="extensions" class="panel internal-page">
                 <h2 class="internal-title">Расширения</h2>
                 <p class="hint">Установка из папки с manifest.json. Разрешения выдаются по профилю; опасные требуют отдельного подтверждения.</p>
@@ -600,310 +431,299 @@
                 <ul id="extList" class="list"></ul>
               </section>
               -->
-
-            </div>
-          </div>
-
-          <div class="browser-empty" id="browserEmpty">
-            <div class="home">
-              <div class="home-greeting" id="homeGreeting">Добрый день</div>
-              <form id="homeSearchForm" class="home-search">
-                <input id="homeSearchInput" type="text" placeholder="Поиск в интернете или адрес сайта" autocomplete="off" spellcheck="false" autofocus />
-                <button type="submit" title="Открыть">→</button>
-              </form>
-
-              <div class="widgets" id="widgetsRow">
-                <div class="widget w-clock" data-widget="clock">
-                  <div class="w-head"><span>Время</span><button class="w-hide" title="Скрыть виджет">✕</button></div>
-                  <div class="w-clock-time" id="wClockTime">00:00</div>
-                  <div class="w-clock-date" id="wClockDate"></div>
-                </div>
-                <div class="widget w-calendar" data-widget="calendar">
-                  <div class="w-head"><span id="calTitle">—</span>
-                    <span class="cal-nav"><button id="calPrev">‹</button><button id="calNext">›</button></span>
-                    <button class="w-hide" title="Скрыть виджет">✕</button>
-                  </div>
-                  <div class="cal-grid" id="calGrid"></div>
-                </div>
-                <div class="widget w-weather" data-widget="weather" id="wWeatherCard">
-                  <div class="w-head"><span>Погода</span><span class="cal-nav"><button id="weatherCityBtn" title="Сменить город" style="background:none;border:none;color:inherit;cursor:pointer;display:grid;place-items:center;width:18px;height:18px"><svg class="ic" style="width:12px;height:12px"><use href="#i-pencil"/></svg></button></span><button class="w-hide" title="Скрыть виджет">✕</button></div>
-                  <div id="weatherBody" class="weather-body"><span class="hint">Загрузка…</span></div>
-                </div>
-                <div class="widget w-tasks" data-widget="tasks">
-                  <div class="w-head"><span>Задачи</span><button id="taskAddBtn" title="Добавить задачу">+</button><button class="w-hide" title="Скрыть виджет">✕</button></div>
-                  <ul id="taskList"></ul>
-                </div>
-              </div>
-              <div class="widgets-manage">
-                <button id="widgetsCfgBtn" class="ghost-btn small">⚙ Настроить виджеты</button>
-                <div id="widgetsCfg" class="graph-menu hidden"></div>
-              </div>
-
-              <div class="home-row-head"><span class="home-sec">Свежие заметки</span></div>
-              <div class="recents" id="noteChips"></div>
-
-              <div class="home-row-head"><span class="home-sec">Закреплённые</span></div>
-              <div class="tiles" id="pinnedTiles"></div>
-
-              <div class="home-row-head"><span class="home-sec">Недавние</span></div>
-              <div class="recents" id="recentTiles"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Note editor split pane -->
-        <div class="editor-pane hidden" id="editorPane">
-          <div class="pane-resizer" id="edResizer" title="Потяните, чтобы изменить ширину"></div>
-          <div class="editor-head">
-            <input id="edTitle" type="text" title="Имя файла заметки" />
-            <div class="editor-tabs">
-              <button data-etab="write" class="active">Редактор</button>
-              <button data-etab="draw">Рисование</button>
-              <button data-etab="preview">Просмотр</button>
-              <button data-etab="graph" title="Визуальный граф связей заметок">Граф</button>
-            </div>
-            <span id="edSaveState" class="ed-save-state"></span>
-            <button id="edExport" class="icon-btn small ghost" title="Экспорт .md в Загрузки">⬇</button>
-            <button id="edClose" class="icon-btn" title="Закрыть редактор">×</button>
-          </div>
-
-          <div class="etab etab-write" id="etabWrite">
-            <div class="md-toolbar" id="mdToolbar">
-              <button data-md="bold" title="Жирный (Ctrl+B)">B</button>
-              <button data-md="italic" title="Курсив (Ctrl+I)"><i>i</i></button>
-              <button data-md="strike" title="Зачёркнутый"><s>S</s></button>
-              <button data-md="h1" title="Заголовок 1">H1</button>
-              <button data-md="h2" title="Заголовок 2">H2</button>
-              <button data-md="h3" title="Заголовок 3">H3</button>
-              <span class="tb-sep"></span>
-              <button data-md="ul" title="Список">•—</button>
-              <button data-md="ol" title="Нумерованный список">1.</button>
-              <button data-md="task" title="Чекбокс">☑</button>
-              <button data-md="quote" title="Цитата">❝</button>
-              <span class="tb-sep"></span>
-              <button data-md="table" title="Таблица">▦</button>
-              <button data-md="code" title="Блок кода">&lt;/&gt;</button>
-              <button data-md="link" title="Ссылка">🔗</button>
-              <button data-md="wikilink" title="Внутренняя ссылка [[…]]">[[ ]]</button>
-              <button data-md="tag" title="Тег">#</button>
-              <button data-md="hr" title="Разделитель">―</button>
-              <span class="tb-sep"></span>
-              <button data-md="callout" title="Callout-блок">💡</button>
-              <button id="mdHelpBtn" type="button" title="Шпаргалка: markdown и формулы" style="margin-left:auto;font-weight:800">? Справка</button>
-            </div>
-            <div id="mdHelp" class="graph-help hidden">
-              <div class="gh-head">
-                <span>Шпаргалка: markdown и формулы</span>
-                <button id="mdHelpClose" class="icon-btn small ghost" title="Закрыть">×</button>
-              </div>
-              <div class="gh-grid">
-                <div class="gh-group">
-                  <h4>📝 Markdown</h4>
-                  <ul>
-                    <li><b>**жирный**</b>, <b>*курсив*</b>, ~~зачёркнутый~~</li>
-                    <li><b># Заголовок</b>, ## поменьше, ### ещё</li>
-                    <li><b>- список</b> · 1. нумерованный · - [ ] задача</li>
-                    <li>&gt; цитата · ▦ таблица · 💡 callout</li>
-                    <li><b>#теги</b> — попадают в поиск</li>
-                    <li><b>[[Вики-ссылка]]</b> на другую заметку (и в граф)</li>
-                  </ul>
-                </div>
-                <div class="gh-group">
-                  <h4>∑ Формулы LaTeX</h4>
-                  <ul>
-                    <li>Инлайн: <b>$E = mc^2$</b></li>
-                    <li>Блок: <b>$$\frac{a}{b}$$</b></li>
-                    <li>\frac{a}{b} дробь · \sqrt{x} корень</li>
-                    <li>x^2 степень · a_i индекс</li>
-                    <li>\alpha \beta \gamma \pi \Omega — греческие</li>
-                    <li>\times \cdot \pm \leq \geq \neq \infty \sum \int \to</li>
-                  </ul>
-                </div>
-                <div class="gh-group">
-                  <h4>🖼 Картинки и рисование</h4>
-                  <ul>
-                    <li>Вкладка «Рисование» → «⬇ В заметку» вставит PNG</li>
-                    <li>![подпись](assets/файл.png) — картинка из заметки</li>
-                  </ul>
-                </div>
+</div>
+</div>
+<div class="browser-empty" id="browserEmpty">
+<div class="home">
+<div class="home-greeting" id="homeGreeting">Добрый день</div>
+<form class="home-search" id="homeSearchForm">
+<input autocomplete="off" autofocus="" id="homeSearchInput" placeholder="Поиск в интернете или адрес сайта" spellcheck="false" type="text"/>
+<button title="Открыть" type="submit">→</button>
+</form>
+<div class="widgets" id="widgetsRow">
+<div class="widget w-clock" data-widget="clock">
+<div class="w-head"><span>Время</span><button class="w-hide" title="Скрыть виджет">✕</button></div>
+<div class="w-clock-time" id="wClockTime">00:00</div>
+<div class="w-clock-date" id="wClockDate"></div>
+</div>
+<div class="widget w-calendar" data-widget="calendar">
+<div class="w-head"><span id="calTitle">—</span>
+<span class="cal-nav"><button id="calPrev">‹</button><button id="calNext">›</button></span>
+<button class="w-hide" title="Скрыть виджет">✕</button>
+</div>
+<div class="cal-grid" id="calGrid"></div>
+</div>
+<div class="widget w-weather" data-widget="weather" id="wWeatherCard">
+<div class="w-head"><span>Погода</span><span class="cal-nav"><button id="weatherCityBtn" style="background:none;border:none;color:inherit;cursor:pointer;display:grid;place-items:center;width:18px;height:18px" title="Сменить город"><svg class="ic" style="width:12px;height:12px"><use href="#i-pencil"></use></svg></button></span><button class="w-hide" title="Скрыть виджет">✕</button></div>
+<div class="weather-body" id="weatherBody"><span class="hint">Загрузка…</span></div>
+</div>
+<div class="widget w-tasks" data-widget="tasks">
+<div class="w-head"><span>Задачи</span><button id="taskAddBtn" title="Добавить задачу">+</button><button class="w-hide" title="Скрыть виджет">✕</button></div>
+<ul id="taskList"></ul>
+</div>
+<div class="widget w-focus" data-widget="focus"><div class="w-head"><span>Фокус</span><button class="w-hide" title="Скрыть виджет">✕</button></div><div class="focus-ring"><span id="focusTime">25:00</span></div><div class="w-actions"><button id="focusToggle">Начать</button><button id="focusReset">Сбросить</button></div></div>
+<div class="widget w-stopwatch" data-widget="stopwatch"><div class="w-head"><span>Секундомер</span><button class="w-hide" title="Скрыть виджет">✕</button></div><div class="stopwatch-time" id="stopwatchTime">00:00.0</div><div class="w-actions"><button id="stopwatchToggle">Старт</button><button id="stopwatchReset">Сбросить</button></div></div>
+<div class="widget w-quote" data-widget="quote"><div class="w-head"><span>Мысль дня</span><span class="qmodes seg" id="quoteModes"><span class="seg-thumb" aria-hidden="true"></span><button data-qm="team" class="on" title="Мысли команды APB">Команда</button><button data-qm="great" title="Великие правители, полководцы и мыслители">Великие</button><button data-qm="statham" title="Все цитаты Джейсона Стэтхема">Стэтхем</button></span><button id="quoteNext" title="Другая цитата">↻</button><button class="w-hide" title="Скрыть виджет">✕</button></div><blockquote id="dailyQuote"></blockquote><small id="dailyQuoteAuthor"></small></div>
+<div class="widget w-session" data-widget="session"><div class="w-head"><span>Текущая сессия</span><button class="w-hide" title="Скрыть виджет">✕</button></div><div class="session-grid"><div><b id="sessionTime">0 мин</b><small>в браузере</small></div><div><b id="sessionTabs">0</b><small>вкладок</small></div><div><b id="systemCores">—</b><small>потоков CPU</small></div><div><b id="networkState">Online</b><small>сеть</small></div></div></div>
+</div>
+<div class="widgets-manage">
+<button class="ghost-btn small" id="widgetsCfgBtn">⚙ Настроить виджеты</button>
+<div class="graph-menu hidden" id="widgetsCfg"></div>
+</div>
+<div class="home-row-head"><span class="home-sec">Свежие заметки</span></div>
+<div class="recents" id="noteChips"></div>
+<div class="home-row-head"><span class="home-sec">Закреплённые</span></div>
+<div class="tiles" id="pinnedTiles"></div>
+<div class="home-row-head"><span class="home-sec">Недавние</span></div>
+<div class="recents" id="recentTiles"></div>
+</div>
+</div>
+</div>
+<!-- Note editor split pane -->
+<div class="editor-pane hidden" id="editorPane">
+<div class="pane-resizer" id="edResizer" title="Потяните, чтобы изменить ширину"></div>
+<div class="editor-head">
+<input id="edTitle" title="Имя файла заметки" type="text"/>
+<div class="editor-tabs">
+<button class="active" data-etab="write">Редактор</button>
+<button data-etab="draw">Рисование</button>
+<button data-etab="preview">Просмотр</button>
+<button data-etab="graph" title="Визуальный граф связей заметок">Граф</button>
+</div>
+<span class="ed-save-state" id="edSaveState"></span>
+<button class="icon-btn small ghost" id="edExport" title="Экспорт .md в Загрузки">⬇</button>
+<button class="icon-btn" id="edClose" title="Закрыть редактор">×</button>
+</div>
+<div class="etab etab-write" id="etabWrite">
+<div class="md-toolbar" id="mdToolbar">
+<button data-md="bold" title="Жирный (Ctrl+B)">B</button>
+<button data-md="italic" title="Курсив (Ctrl+I)"><i>i</i></button>
+<button data-md="strike" title="Зачёркнутый"><s>S</s></button>
+<button data-md="h1" title="Заголовок 1">H1</button>
+<button data-md="h2" title="Заголовок 2">H2</button>
+<button data-md="h3" title="Заголовок 3">H3</button>
+<span class="tb-sep"></span>
+<button data-md="ul" title="Список">•—</button>
+<button data-md="ol" title="Нумерованный список">1.</button>
+<button data-md="task" title="Чекбокс">☑</button>
+<button data-md="quote" title="Цитата">❝</button>
+<span class="tb-sep"></span>
+<button data-md="table" title="Таблица">▦</button>
+<button data-md="code" title="Блок кода">&lt;/&gt;</button>
+<button data-md="link" title="Ссылка">🔗</button>
+<button data-md="wikilink" title="Внутренняя ссылка [[…]]">[[ ]]</button>
+<button data-md="tag" title="Тег">#</button>
+<button data-md="hr" title="Разделитель">―</button>
+<span class="tb-sep"></span>
+<button data-md="callout" title="Callout-блок">💡</button>
+<button id="mdHelpBtn" style="margin-left:auto;font-weight:800" title="Шпаргалка: markdown и формулы" type="button">? Справка</button>
+</div>
+<div class="graph-help hidden" id="mdHelp">
+<div class="gh-head">
+<span>Шпаргалка: markdown и формулы</span>
+<button class="icon-btn small ghost" id="mdHelpClose" title="Закрыть">×</button>
+</div>
+<div class="gh-grid">
+<div class="gh-group">
+<h4>📝 Markdown</h4>
+<ul>
+<li><b>**жирный**</b>, <b>*курсив*</b>, ~~зачёркнутый~~</li>
+<li><b># Заголовок</b>, ## поменьше, ### ещё</li>
+<li><b>- список</b> · 1. нумерованный · - [ ] задача</li>
+<li>&gt; цитата · ▦ таблица · 💡 callout</li>
+<li><b>#теги</b> — попадают в поиск</li>
+<li><b>[[Вики-ссылка]]</b> на другую заметку (и в граф)</li>
+</ul>
+</div>
+<div class="gh-group">
+<h4>∑ Формулы LaTeX</h4>
+<ul>
+<li>Инлайн: <b>$E = mc^2$</b></li>
+<li>Блок: <b>$$\frac{a}{b}$$</b></li>
+<li>\frac{a}{b} дробь · \sqrt{x} корень</li>
+<li>x^2 степень · a_i индекс</li>
+<li>\alpha \beta \gamma \pi \Omega — греческие</li>
+<li>\times \cdot \pm \leq \geq \neq \infty \sum \int \to</li>
+</ul>
+</div>
+<div class="gh-group">
+<h4>🖼 Картинки и рисование</h4>
+<ul>
+<li>Вкладка «Рисование» → «⬇ В заметку» вставит PNG</li>
+<li>![подпись](assets/файл.png) — картинка из заметки</li>
+</ul>
+</div>
 <!-- Made by MrDuck -->
-                <div class="gh-group">
-                  <h4>🗂 Папки</h4>
-                  <ul>
-                    <li>Имя вида <b>Папка/Имя.md</b> создаст подпапку</li>
-                    <li>ПКМ по заметке — переименовать/переместить</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <textarea id="edText" spellcheck="false" placeholder="# Заголовок&#10;&#10;Пишите markdown. [[ссылки]], #теги, таблицы через кнопку ▦.&#10;Вкладка «Рисование» — рисуйте и вставляйте схемы прямо в заметку."></textarea>
-          </div>
+<div class="gh-group">
+<h4>🗂 Папки</h4>
+<ul>
+<li>Имя вида <b>Папка/Имя.md</b> создаст подпапку</li>
+<li>ПКМ по заметке — переименовать/переместить</li>
+</ul>
+</div>
+</div>
+</div>
+<textarea id="edText" placeholder="# Заголовок
 
-          <div class="etab etab-draw hidden" id="etabDraw">
-            <div class="draw-tools">
-              <button data-tool="pen" class="active" title="Перо">✏️</button>
-              <button data-tool="marker" title="Маркер">🖍️</button>
-              <button data-tool="eraser" title="Ластик">🧽</button>
-              <button data-tool="rect" title="Прямоугольник">▭</button>
-              <button data-tool="ellipse" title="Овал">◯</button>
-              <button data-tool="arrow" title="Стрелка">➚</button>
-              <button data-tool="line" title="Линия">╱</button>
-              <button data-tool="text" title="Текст">T</button>
-              <button data-tool="sticky" title="Стикер">🗒️</button>
-              <span class="tb-sep"></span>
-              <input type="color" id="drawColor" value="#e8eaed" title="Цвет" />
-              <input type="range" id="drawWidth" min="1" max="24" value="3" title="Толщина" />
-              <span class="tb-sep"></span>
-              <button id="drawUndo" title="Отменить">↶</button>
-              <button id="drawRedo" title="Вернуть">↷</button>
-              <button id="drawClear" title="Очистить">🗑</button>
-              <button id="drawInsert" class="draw-insert" title="Вставить рисунок в заметку">⬇ В заметку</button>
-            </div>
-            <div class="draw-stage"><canvas id="drawCanvas"></canvas></div>
-          </div>
-
-          <div class="etab etab-preview hidden" id="etabPreview">
-            <div id="edPreview" class="md-preview"></div>
-          </div>
-
-          <div class="etab etab-graph hidden" id="etabGraph">
-            <div class="graph-tools">
-              <button id="graphReload" class="ghost-btn">Обновить</button>
-              <button id="graphLayout" class="ghost-btn" title="Разово переложить граф физикой">✨ Уложить</button>
-              <button id="graphUndo" class="ghost-btn" title="Отменить (Ctrl+Z)">↩</button>
-              <button id="graphRedo" class="ghost-btn" title="Вернуть (Ctrl+Shift+Z)">↪</button>
-              <input id="graphSearch" class="graph-search" type="text" placeholder="🔎 Фильтр заметок… (Enter — открыть)" />
-              <button id="boardClear" class="ghost-btn danger" title="Убрать все блоки и связи (заметки останутся)">🧹 Очистить поле</button>
-              <button id="graphCfg" class="ghost-btn" title="Настройки графа: сетка, привязка, якоря">⚙ Настройки</button>
-              <button id="graphHelpBtn" class="ghost-btn" title="Что можно делать в графе">❓ Подсказка</button>
-              <button id="graphExportPng" class="ghost-btn" title="Сохранить граф как PNG в Загрузки">⬇ PNG</button>
-              <div class="graph-zoom">
-                <button id="gzIn" title="Приблизить">+</button>
-                <button id="gzOut" title="Отдалить">−</button>
-                <button id="gzFit" title="Показать всё">⤢</button>
-              </div>
-              <span class="hint" id="graphStats"></span>
-              <span class="hint">Все жесты — в ❓ Подсказке · ПКМ-тянуть от фигуры — связь · 2×ПКМ — меню создания</span>
-            </div>
-            <div id="graphStage">
-              <canvas id="graphCanvas"></canvas>
-              <div id="blockLayer"></div>
-            </div>
-            <div id="graphHelp" class="graph-help hidden">
-              <div class="gh-head">
-                <span>Что можно делать в графе</span>
-                <button id="graphHelpClose" class="icon-btn small ghost" title="Закрыть">×</button>
-              </div>
-              <div class="gh-grid">
-                <div class="gh-group">
-                  <h4>🧭 Навигация</h4>
-                  <ul>
-                    <li><b>Колесо мыши</b> — зум</li>
-                    <li><b>ПКМ / СКМ + тянуть</b> по фону — панорама</li>
-                    <li>Одиночный ПКМ по пустоте ничего не открывает</li>
-                  </ul>
-                </div>
-                <div class="gh-group">
-                  <h4>➕ Создание</h4>
-                  <ul>
-                    <li><b>2×ПКМ по фону</b> — меню создания (заметка, текст, картинка)</li>
-                    <li><b>2×ЛКМ по фону</b> — новая заметка сразу</li>
-                    <li>Текст в блоках правится на месте</li>
-                  </ul>
-                </div>
-                <div class="gh-group">
-                  <h4>🔗 Связи</h4>
-                  <ul>
-                    <li><b>ПКМ + тянуть от фигуры</b> — провести связь</li>
-                    <li><b>● точка на краю карточки</b> — тянуть связь левой кнопкой</li>
-                    <li><b>Клик по линии</b> — выбрать, Del — удалить</li>
-                    <li>[[вики-ссылки]] в заметках становятся связями</li>
-                  </ul>
-                </div>
-                <div class="gh-group">
-                  <h4>✂️ Выделение и удаление</h4>
-                  <ul>
-                    <li><b>ЛКМ-рамка по фону</b> — выделить группу</li>
-                    <li><b>Тянуть выделенное</b> — групповой перенос</li>
-                    <li><b>Del</b> — удалить блоки и линии (заметки-файлы не удаляются)</li>
-                    <li><b>Esc</b> — снять выделение</li>
-                  </ul>
-                </div>
-                <div class="gh-group">
-                  <h4>↩ История</h4>
-                  <ul>
-                    <li><b>Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y</b> — отмена и возврат</li>
-                    <li><b>✨ Уложить</b> — переложить граф физикой</li>
-                    <li><b>🧹 Очистить поле</b> — убрать блоки (заметки останутся)</li>
-                  </ul>
-                </div>
-                <div class="gh-group">
-                  <h4>🔎 Прочее</h4>
-                  <ul>
-                    <li><b>Поле с 🔎</b> — фильтр заметок, Enter открывает найденную</li>
-                    <li><b>⚙ Настройки</b> — сетка, привязка, якоря, физика, стиль линий</li>
-                    <li><b>Клик по заметке</b> — открыть её в редакторе</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AI chat pane (right split, like the note editor) -->
-        <div class="editor-pane ai-pane hidden" id="aiPane">
-          <div class="pane-resizer" id="aiResizer" title="Потяните, чтобы изменить ширину"></div>
-          <div class="editor-head">
-            <span class="pane-title-sm">✦ AI-ассистент</span>
-            <button id="aiCfgToggle" class="ghost-btn small" title="Настройки провайдера">⚙</button>
-            <button id="aiClose" class="icon-btn" title="Закрыть чат">×</button>
-          </div>
-
-          <div id="aiSetup" class="ai-setup">
-            <h3>Настройка AI</h3>
-            <p class="hint">Выберите провайдера. Ollama работает полностью локально — запросы не покидают компьютер. Секреты в тексте фильтруются автоматически.</p>
-            <div class="row">
-              <select id="aiKindSelect">
-                <option value="ollama">Ollama (локально)</option>
-                <option value="open_ai_compatible">OpenAI-compatible</option>
-                <option value="anthropic_compatible">Anthropic-compatible</option>
-                <option value="custom_http">Custom HTTP</option>
-              </select>
-            </div>
-            <input id="aiBaseUrl" type="text" placeholder="http://127.0.0.1:11434/v1/chat/completions" />
-            <input id="aiModel" type="text" placeholder="Модель (llama3.2)" />
-            <input id="aiKeyEnv" type="text" placeholder="ENV-переменная с API-ключом (для облака)" />
-            <button id="aiSaveCfgBtn" class="primary-btn">Сохранить и начать чат</button>
-            <p class="hint" id="aiSetupStatus"></p>
-          </div>
-
-          <div id="aiChatWrap" class="hidden">
-            <div id="aiReply" class="chat-log"></div>
-            <p class="hint" id="aiMeta"></p>
-            <div class="chat-input-row">
-              <button id="aiCtxBtn" class="icon-btn small" title="Добавлять текст активной страницы в запрос" style="width:32px;height:32px"><svg class="ic"><use href="#i-globe"/></svg></button>
-              <textarea id="aiPrompt" rows="1" placeholder="Спросите что-нибудь…  (Enter — отправить)"></textarea>
-              <button id="aiTranslateBtn" class="icon-btn small" title="Перевести страницу через ИИ" style="width:32px;height:32px"><svg class="ic"><use href="#i-lang"/></svg></button>
-              <button id="aiAskBtn" title="Отправить">➤</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </main>
-  </div>
-
-  <!-- Command palette -->
-  <div id="paletteOverlay" class="palette-overlay hidden">
-    <div class="palette">
-      <input id="paletteInput" placeholder="Команда… (Esc — закрыть)" />
-      <ul id="paletteList" class="list"></ul>
-    </div>
-  </div>
-
-  <!-- Load order = original monolith execution order. DO NOT reorder.
+Пишите markdown. [[ссылки]], #теги, таблицы через кнопку ▦.
+Вкладка «Рисование» — рисуйте и вставляйте схемы прямо в заметку." spellcheck="false"></textarea>
+</div>
+<div class="etab etab-draw hidden" id="etabDraw">
+<div class="draw-tools">
+<button class="active" data-tool="pen" title="Перо">✏️</button>
+<button data-tool="marker" title="Маркер">🖍️</button>
+<button data-tool="eraser" title="Ластик">🧽</button>
+<button data-tool="rect" title="Прямоугольник">▭</button>
+<button data-tool="ellipse" title="Овал">◯</button>
+<button data-tool="arrow" title="Стрелка">➚</button>
+<button data-tool="line" title="Линия">╱</button>
+<button data-tool="text" title="Текст">T</button>
+<button data-tool="sticky" title="Стикер">🗒️</button>
+<span class="tb-sep"></span>
+<input id="drawColor" title="Цвет" type="color" value="#e8eaed"/>
+<input id="drawWidth" max="24" min="1" title="Толщина" type="range" value="3"/>
+<span class="tb-sep"></span>
+<button id="drawUndo" title="Отменить">↶</button>
+<button id="drawRedo" title="Вернуть">↷</button>
+<button id="drawClear" title="Очистить">🗑</button>
+<button class="draw-insert" id="drawInsert" title="Вставить рисунок в заметку">⬇ В заметку</button>
+</div>
+<div class="draw-stage"><canvas id="drawCanvas"></canvas></div>
+</div>
+<div class="etab etab-preview hidden" id="etabPreview">
+<div class="md-preview" id="edPreview"></div>
+</div>
+<div class="etab etab-graph hidden" id="etabGraph">
+<div class="graph-tools">
+<button class="ghost-btn" id="graphReload">Обновить</button>
+<button class="ghost-btn" id="graphLayout" title="Разово переложить граф физикой">✨ Уложить</button>
+<button class="ghost-btn" id="graphUndo" title="Отменить (Ctrl+Z)">↩</button>
+<button class="ghost-btn" id="graphRedo" title="Вернуть (Ctrl+Shift+Z)">↪</button>
+<input class="graph-search" id="graphSearch" placeholder="🔎 Фильтр заметок… (Enter — открыть)" type="text"/>
+<button class="ghost-btn danger" id="boardClear" title="Убрать все блоки и связи (заметки останутся)">🧹 Очистить поле</button>
+<button class="ghost-btn" id="graphCfg" title="Настройки графа: сетка, привязка, якоря">⚙ Настройки</button>
+<button class="ghost-btn" id="graphHelpBtn" title="Что можно делать в графе">❓ Подсказка</button>
+<button class="ghost-btn" id="graphExportPng" title="Сохранить граф как PNG в Загрузки">⬇ PNG</button>
+<div class="graph-zoom">
+<button id="gzIn" title="Приблизить">+</button>
+<button id="gzOut" title="Отдалить">−</button>
+<button id="gzFit" title="Показать всё">⤢</button>
+</div>
+<span class="hint" id="graphStats"></span>
+<span class="hint">Все жесты — в ❓ Подсказке · ПКМ-тянуть от фигуры — связь · 2×ПКМ — меню создания</span>
+</div>
+<div id="graphStage">
+<canvas id="graphCanvas"></canvas>
+<div id="blockLayer"></div>
+</div>
+<div class="graph-help hidden" id="graphHelp">
+<div class="gh-head">
+<span>Что можно делать в графе</span>
+<button class="icon-btn small ghost" id="graphHelpClose" title="Закрыть">×</button>
+</div>
+<div class="gh-grid">
+<div class="gh-group">
+<h4>🧭 Навигация</h4>
+<ul>
+<li><b>Колесо мыши</b> — зум</li>
+<li><b>ПКМ / СКМ + тянуть</b> по фону — панорама</li>
+<li>Одиночный ПКМ по пустоте ничего не открывает</li>
+</ul>
+</div>
+<div class="gh-group">
+<h4>➕ Создание</h4>
+<ul>
+<li><b>2×ПКМ по фону</b> — меню создания (заметка, текст, картинка)</li>
+<li><b>2×ЛКМ по фону</b> — новая заметка сразу</li>
+<li>Текст в блоках правится на месте</li>
+</ul>
+</div>
+<div class="gh-group">
+<h4>🔗 Связи</h4>
+<ul>
+<li><b>ПКМ + тянуть от фигуры</b> — провести связь</li>
+<li><b>● точка на краю карточки</b> — тянуть связь левой кнопкой</li>
+<li><b>Клик по линии</b> — выбрать, Del — удалить</li>
+<li>[[вики-ссылки]] в заметках становятся связями</li>
+</ul>
+</div>
+<div class="gh-group">
+<h4>✂️ Выделение и удаление</h4>
+<ul>
+<li><b>ЛКМ-рамка по фону</b> — выделить группу</li>
+<li><b>Тянуть выделенное</b> — групповой перенос</li>
+<li><b>Del</b> — удалить блоки и линии (заметки-файлы не удаляются)</li>
+<li><b>Esc</b> — снять выделение</li>
+</ul>
+</div>
+<div class="gh-group">
+<h4>↩ История</h4>
+<ul>
+<li><b>Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y</b> — отмена и возврат</li>
+<li><b>✨ Уложить</b> — переложить граф физикой</li>
+<li><b>🧹 Очистить поле</b> — убрать блоки (заметки останутся)</li>
+</ul>
+</div>
+<div class="gh-group">
+<h4>🔎 Прочее</h4>
+<ul>
+<li><b>Поле с 🔎</b> — фильтр заметок, Enter ��ткрывает найденную</li>
+<li><b>⚙ Настройки</b> — сетка, привязка, якоря, физика, стиль линий</li>
+<li><b>Клик по заметке</b> — открыть её в редакторе</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI chat pane — left drawer (flex-drawer, как .side-panel) -->
+<div class="editor-pane ai-pane hidden" id="aiPane">
+<div class="pane-resizer right" id="aiResizer" title="Потяните, чтобы изменить ширину"></div>
+<div class="editor-head">
+<div class="ai-brand"><span class="ai-orb"><i></i></span><span><b>APB Assistant</b><small id="aiLiveStatus">Готов помочь</small></span></div>
+<button class="ghost-btn small" id="aiCfgToggle" title="Настройки провайдера">⚙</button>
+<button class="icon-btn" id="aiClose" title="Закрыть чат">×</button>
+</div>
+<div class="ai-setup" id="aiSetup">
+<h3>Настройка AI</h3>
+<p class="hint">Выберите провайдера. Ollama работает полностью локально — запросы не покидают компьютер. Секреты в тексте фильтруются автоматически.</p>
+<div class="row">
+<select id="aiKindSelect">
+<option value="ollama">Ollama (локально)</option>
+<option value="open_ai_compatible">OpenAI-compatible</option>
+<option value="anthropic_compatible">Anthropic-compatible</option>
+<option value="custom_http">Custom HTTP</option>
+</select>
+</div>
+<input id="aiBaseUrl" placeholder="http://127.0.0.1:11434/v1/chat/completions" type="text"/>
+<input id="aiModel" placeholder="Модель (llama3.2)" type="text"/>
+<input id="aiKeyEnv" placeholder="ENV-переменная с API-ключом (для обла��а)" type="text"/>
+<button class="primary-btn" id="aiSaveCfgBtn">Сохранить и начать чат</button>
+<p class="hint" id="aiSetupStatus"></p>
+</div>
+<div class="hidden" id="aiChatWrap">
+<div class="ai-welcome" id="aiWelcome"><span class="ai-welcome-orb">✦</span><h3>Чем помочь?</h3><p>Спроси о странице, попроси краткое содержание или начни с шаблона.</p><div class="ai-suggestions"><button data-ai-prompt="Кратко перескажи текущую страницу">Краткое содержание</button><button data-ai-prompt="Выдели главные идеи и факты текущей страницы">Главные идеи</button><button data-ai-prompt="Объясни содержимое страницы простыми словами">Объяснить проще</button></div></div><div class="chat-log" id="aiReply"></div>
+<p class="hint" id="aiMeta"></p>
+<div class="chat-input-row">
+<button class="icon-btn small" id="aiCtxBtn" style="width:32px;height:32px" title="Добавлять текст активной страницы в запрос"><svg class="ic"><use href="#i-globe"></use></svg></button>
+<textarea id="aiPrompt" placeholder="Спросите что-нибудь…  (Enter — отправить)" rows="1"></textarea>
+<button id="aiAskBtn" title="Отправить">➤</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Command palette -->
+<div class="palette-overlay hidden" id="paletteOverlay">
+<div class="palette">
+<input id="paletteInput" placeholder="Команда… (Esc — закрыть)"/>
+<ul class="list" id="paletteList"></ul>
+</div>
+</div>
+<!-- Load order = original monolith execution order. DO NOT reorder.
        Mapping to Rust modules: see ARCHITECTURE.md / src-tauri/src/cmd/mod.rs -->
-  <script>
+<script>
     window.addEventListener("error", function (e) {
       try {
         var d = document.createElement("pre");
@@ -913,25 +733,30 @@
       } catch (_) {}
     });
   </script>
-  <!-- Debug-логгер НЕ подключён здесь: в debug-сборке его инжектит бэкенд
+<!-- Debug-логгер НЕ подключён здесь: в debug-сборке его инжектит бэкенд
        (main.rs DEBUG_FRONTEND_JS, initialization_script до всех скриптов),
        в release-сборке логгера нет вообще. -->
-  <script src="vendor/katex/katex.min.js"></script>
-  <script src="js/core/i18n.js?v=3"></script>
-  <script src="js/core/boot-core.js?v=8"></script>
-  <script src="js/shell/updater-ui.js?v=2"></script>
-  <script src="js/shell/sitefx-ctxmenu-find.js?v=11"></script>
-  <script src="js/shell/theme-searchengines.js?v=3"></script>
-  <script src="js/panels/profiles-sidepanel.js"></script>
-  <script src="js/shell/sound-internalpages.js?v=2"></script>
-  <script src="js/tabs/session-ws-downloads-tabs.js?v=32"></script>
-  <script src="js/home/home-widgets.js?v=2"></script>
-  <script src="js/panels/omnibox-library-panels.js?v=23"></script>
-  <script src="js/notes/notes-editor.js?v=13"></script>
-  <script src="js/settings/settings-onboarding-pz.js?v=16"></script>
-  <script src="js/graph/graph-settings.js"></script>
-  <script src="js/graph/graph.js?v=11"></script>
-</body>
+<script src="vendor/katex/katex.min.js"></script>
+<script src="src/app/i18n.js?v=8"></script>
+<script src="src/app/bootstrap.js?v=9"></script>
+<script src="src/shared/effects/registry.js?v=8"></script>
+<script src="src/features/appearance/backgrounds/canvas.js?v=9"></script>
+<script src="src/features/appearance/backgrounds/css.js?v=8"></script>
+<script src="src/features/appearance/background-manager.js?v=8"></script>
+<script src="src/features/updater/index.js?v=8"></script>
+<script src="src/features/browser/site-tools.js?v=8"></script>
+<script src="src/features/appearance/theme.js?v=8"></script>
+<script src="src/features/appearance/color-picker.js?v=8"></script>
+<script src="src/features/profiles/index.js?v=8"></script>
+<script src="src/features/shell/internal-pages.js?v=11"></script>
+<script src="src/features/tabs/index.js?v=17"></script>
+<script src="src/features/home/widgets.js?v=23"></script>
+<script src="src/features/home/widget-layout.js?v=12"></script>
+<script src="src/features/library/index.js?v=11"></script>
+<script src="src/features/notes/editor.js?v=9"></script>
+<script src="src/features/appearance/settings.js?v=10"></script>
+<script src="src/features/graph/settings.js?v=8"></script>
+<script src="src/features/graph/index.js?v=8"></script>
+<script src="src/features/home/calendar/calendar-events.js?v=8"></script><dialog class="apb-dialog experiment-dialog" id="materialWarningDialog"><form method="dialog"><div class="experiment-icon">⚠</div><h3>Экспериментальная прозрачность</h3><p>Эта функция работает нестабильно и зависит от Windows, видеодрайвера, WebView2 и выбранной темы.</p><ul><li>часть интерфейса может стать слишком прозрачной или нечитаемой;</li><li>возможны мерцание, чёрный фон и артефакты при разворачивании окна;</li><li>живой фон будет приостановлен, пока включён системный материал;</li><li>после обновления Windows эффект может измениться.</li></ul><label class="experiment-consent"><input id="materialConsent" type="checkbox"/> Я понимаю, что функция экспериментальная</label><div class="dialog-actions"><button class="ghost-btn" value="cancel">Отмена</button><button class="primary-btn" disabled="" id="materialConfirmUnlock" value="unlock">Понимаю, разблокировать</button></div></form></dialog><script src="src/features/sync/index.js?v=8"></script><script src="src/features/maintenance/index.js?v=10"></script><script src="src/features/accessibility/index.js?v=8"></script><script src="src/features/appearance/controller.js?v=8"></script></body>
 </html>
-
 <!-- Made by MrDuck -->

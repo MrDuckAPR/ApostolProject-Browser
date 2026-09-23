@@ -1,4 +1,4 @@
-// Made by MrDuck && Ox-Alpha
+﻿// Made by MrDuck && Ox-Alpha
 //! Built-in blocklists shipped with the binary (§10A.11): network-layer
 //! domain rules plus generic cosmetic-filtering CSS. Protection works
 //! offline on first launch; bigger/custom lists come via «Мои списки».
@@ -367,6 +367,53 @@ pub fn builtin_rules() -> Vec<(&'static str, TrackerCategory)> {
         ("px.ads.linkedin.com", Social),
         ("analytics.pointdrive.linkedin.com", Social),
         ("ads.snapchat.com", Social),
+        // ---------------- Extended adtech / SSP / DSP (сессия 120) ----------
+        ("sovrn.com", Advertising),
+        ("sovrn.co", Advertising),
+        ("lijit.com", Advertising),
+        ("axf8.net", Advertising),
+        ("adsymptotic.com", Advertising),
+        ("adcolony.com", Advertising),
+        ("adcolony.net", Advertising),
+        ("startappservice.com", Advertising),
+        ("chartboost.com", Advertising),
+        ("ironsrc.com", Advertising),
+        ("ironsrc.net", Advertising),
+        ("flashtalking.com", Advertising),
+        ("flashtalking.net", Advertising),
+        ("jivox.com", Advertising),
+        ("conversantmedia.com", Advertising),
+        ("districtm.io", Advertising),
+        ("districtm.net", Advertising),
+        ("mediamath.com", Advertising),
+        ("mediamath.net", Advertising),
+        ("lotame.com", Advertising),
+        ("lotame.net", Advertising),
+        ("intentiq.com", Advertising),
+        ("admixer.net", Advertising),
+        ("admixer.com", Advertising),
+        ("epom.com", Advertising),
+        ("infolinks.com", Advertising),
+        ("undertone.com", Advertising),
+        ("insticator.com", Advertising),
+        ("grow.me", Advertising),
+        ("nativo.com", Advertising),
+        ("stickyadstv.com", Advertising),
+        ("unrulymedia.com", Advertising),
+        ("zeropark.com", Advertising),
+        ("richaudience.com", Advertising),
+        ("adtech.com", Advertising),
+        ("adbutler.com", Advertising),
+        ("adbutler.net", Advertising),
+        // ---------------- Consent / CMP platforms ----------------
+        ("consentmanager.net", Analytics),
+        ("sddan.com", Analytics),
+        ("didomi.io", Analytics),
+        ("sourcepoint.com", Analytics),
+        // ---------------- RU / CIS (extra) ----------------
+        ("rs.mail.ru", Advertising),
+        ("advertising.yahoo.com", Advertising),
+        ("analytics.yahoo.com", Analytics),
     ]
 }
 
@@ -429,6 +476,8 @@ img[src*="/banners/"],img[src*="/banner/"],img[src*="/ads/"],img[src*="/advert"]
 img[src*="/ad-banner"],img[src*="/adbanner"],img[src*="ad_banner"],
 object[data*="/banners/"],object[data*="/banner/"],object[data*=".swf"],
 embed[src*="/banners/"],embed[src*=".swf"],iframe[src*="/banners/"]{display:none!important}
+/* Блокированные теговым перехватом элементы без src — убираем из потока */
+.apb-hidden{display:none!important}
 "#;
 
 /// Cosmetic stylesheet-planter (internal): injects `<style id=apb-cosmetic>`
@@ -536,6 +585,7 @@ fn aggressive_dom_script() -> String {
     };
     const sweep = () => {
       try {
+        if (window.__apbAggPaused) return;
         if (document.body) {
           document.querySelectorAll("img,iframe,object,embed").forEach(killMedia);
           document.querySelectorAll('div,section,aside,ins,iframe,object,embed,form').forEach((n) => { if (adish(n)) killEl(n); });
@@ -557,7 +607,7 @@ fn aggressive_dom_script() -> String {
     }
     window.addEventListener("load", () => { sweep(); }, true);
     const obs = new MutationObserver(() => {
-      try { const m = (mutation) => { for (const nn of mutation.addedNodes || []) { if (nn.nodeType === 1) { if (adish(nn)) killEl(nn); else nn.querySelectorAll && nn.querySelectorAll('img,iframe,object,embed,div,section,aside,ins,form').forEach((c) => { if (adish(c)) killEl(c); else killMedia(c); }); } } }; obs.takeRecords().forEach(m); } catch (e) {}
+      try { if (window.__apbAggPaused) return; const m = (mutation) => { for (const nn of mutation.addedNodes || []) { if (nn.nodeType === 1) { if (adish(nn)) killEl(nn); else nn.querySelectorAll && nn.querySelectorAll('img,iframe,object,embed,div,section,aside,ins,form').forEach((c) => { if (adish(c)) killEl(c); else killMedia(c); }); } } }; obs.takeRecords().forEach(m); } catch (e) {}
     });
     obs.observe(document.documentElement || document, { childList: true, subtree: true });
     // Slow keep-alive for dynamic ad injection after the burst window.
@@ -650,6 +700,10 @@ const REQUEST_TOKENS: &[&str] = &[
     "/ads/", "/adframe", "/advert", "/banner/", "/pagead/", "/adsystem",
     "/analytics.js", "/gtag/js", "metrika/tag.js", "/telemetry", "/collect?v=",
     "/beacon.gif", "__utm", "/pixel?", "/track?", "/event?",
+    "/ad.js", "/ads.js", "/adserver", "/adclick", "/adrotate", "/dfp/",
+    "/gpt/ad", "googlesyndication", "/doubleclick", "/adsbygoogle", "/pagead",
+    "/adnxs", "/taboola", "/outbrain", "/criteo", "/pubmatic", "/openx",
+    "/adfox", "/yandex_rtb", "/an.yandex", "/adriver", "/mgid", "/rtrg",
 ];
 
 /// URL substrings the in-page shim should treat as tracking/ad requests.
@@ -682,6 +736,16 @@ const AGGRESSIVE_REQUEST_TOKENS: &[&str] = &[
     "/sponsor", "/promo/ad", "/popunder", "/popunders", "/pop_exit", "/exitad",
     "/banners/", "/ad_banner", "/ad-banner", "ads.js", "ads.json", "/track?",
     "/collect?", "/beacon", "/pixel", "/analytics", "/telemetry", "/metrics?",
+    ".ads.", ".ads/", "/adx", "/ads1", "/ads2", "/ads3", "/adsbygoogle",
+    "/googlesyndication", "/adnxs", "/openx", "/taboola", "/outbrain",
+    "/criteo", "/pubmatic", "/rubicon", "/mediamath", "/lotame", "/krxd",
+    "/demdex", "/everest", "/scorecardresearch", ".doubleclick.",
+    "/doubleclick", "/adfox", "/adriver", "/mgid", "/smi2", "/webvisor",
+    "/top100", "/hitst", "/hotlog", "/metrika", "/mc.yandex", "/bat.bing",
+    "/clarity.ms", "/segment.io", "/mixpanel", "/amplitude", "/fs.js",
+    "/fullstory", "/hotjar", "/mouseflow", "/crazyegg", "/inspectlet",
+    "/imasdk.googleapis", "/kargo", "/sharethrough", "/confiant",
+    ".adsafeprotected", "/adyoulike", "/weborama", "/smartclip", "/freewheel",
 ];
 
 /// URL substrings for the in-page shim in Aggressive mode: the balanced set
@@ -708,6 +772,7 @@ pub fn request_blocker_script(patterns: &[String]) -> String {
     Object.defineProperty(window, "__apbReqBlock", {{ value: true }});
     const PAT = {json};
     const hit = (u) => {{
+      if (window.__apbReqBlockOff) return false;
       if (!u) return false;
       const url = String(u).toLowerCase();
       for (let i = 0; i < PAT.length; i++) {{
@@ -743,6 +808,88 @@ pub fn request_blocker_script(patterns: &[String]) -> String {
     XMLHttpRequest.prototype.send = function (...a) {{
       if (this.__apbBlocked) throw abort();
       return xs.apply(this, a);
+    }};
+    // ТЕГОВЫЙ ПЕРЕХВАТ (как в расширениях): fetch/XHR/sendBeacon закрывают
+    // только JS-финталы. Баннерные script/img/iframe вставляются напрямую
+    // через document.write / createElement + .src — здесь мы режем их ДО
+    // того, как присвоенный src успеет запустить сетевой запрос.
+    // Патчим собственный сеттер src/data у тегов: проксируем элемент,
+    // не трогая прототип целиком (безопасно для данных-атрибутов).
+    const TAG_SRC = ["script", "img", "iframe", "embed", "object", "source", "track", "frame"];
+    const SRC_PROPS = ["src", "data"];
+    const patchElement = (el) => {{
+      for (const p of SRC_PROPS) {{
+        try {{
+          const desc = Object.getOwnPropertyDescriptor(el, p);
+          const rawGet = desc && desc.get ? desc.get.bind(el) : () => el.getAttribute(p);
+          const rawSet = desc && desc.set ? desc.set.bind(el) : (v) => el.setAttribute(p, v);
+          Object.defineProperty(el, p, {{
+            configurable: true,
+            get: rawGet,
+            set: (v) => {{
+              try {{
+                if (hit(v)) {{
+                  el.__apbKilled = true;
+                  const tag = (el.tagName || "").toLowerCase();
+                  if (tag === "script") {{ return; }}
+                  if (tag === "img" || tag === "source") {{ return; }}
+                }}
+              }} catch (e) {{}}
+              return rawSet(v);
+            }},
+          }});
+        }} catch (e) {{}}
+      }}
+    }};
+    const guardCreate = (orig) => function (tag, opts) {{
+      const el = orig.apply(this, arguments);
+      if (el && el.tagName && TAG_SRC.indexOf(String(el.tagName).toLowerCase()) >= 0) {{
+        patchElement(el);
+      }}
+      return el;
+    }};
+    if (Document.prototype.createElement) {{
+      Document.prototype.createElement = guardCreate(Document.prototype.createElement);
+    }}
+    if (document.createElement) {{
+      document.createElement = guardCreate(document.createElement.bind(document));
+      // createElementNS для SVG (баннеры-картинки внутри <svg>).
+      const cns = document.createElementNS.bind(document);
+      document.createElementNS = (ns, q) => {{ const el = cns(ns, q); if (el && TAG_SRC.indexOf(String(el.tagName).toLowerCase()) >= 0) patchElement(el); return el; }};
+    }}
+    // document.write: баннеры через <script src=...> в строке — блокируем
+    // как единую ядровую часть, сохраняя остальной HTML.
+    const dw = Document.prototype.write;
+    if (dw) Document.prototype.write = function (s) {{
+      try {{
+        const sp = document.createElement("div");
+        sp.innerHTML = String(s || "");
+        sp.querySelectorAll("script[src],iframe[src],img[src],embed[src],object[data],source[src]")
+          .forEach((n) => {{
+            const u = n.getAttribute("src") || n.getAttribute("data") || "";
+            if (hit(u) && n.tagName !== "SCRIPT") {{ n.setAttribute("src", ""); n.setAttribute("data", ""); }}
+            else if (hit(u) && n.tagName === "SCRIPT") {{ const r = n.cloneNode(false); r.setAttribute("src", "data:text/javascript,"); n.parentNode && n.parentNode.replaceChild(r, n); }}
+          }});
+      }} catch (e) {{}}
+      return dw.apply(document, arguments);
+    }};
+    // Блокируем setAttribute для src/srcset/data на всех рекламных тегах
+    // (setAttribute обходит property-сеттеры, поэтому укалываем и его).
+    const sac = HTMLElement.prototype.setAttribute;
+    HTMLElement.prototype.setAttribute = function (n, v) {{
+      try {{
+        const tag = String(this.tagName || "").toLowerCase();
+        if (TAG_SRC.indexOf(tag) >= 0 && (n === "src" || n === "srcset" || n === "data")) {{
+          if (hit(v)) {{
+            this.__apbKilled = true;
+            if (tag === "script") {{ return; }}
+            if (tag === "img" || tag === "source" || tag === "object" || tag === "embed") {{
+              this.removeAttribute(n); this.className += " apb-hidden"; return;
+            }}
+          }}
+        }}
+      }} catch (e) {{}}
+      return sac.call(this, n, v);
     }};
   }} catch (e) {{}}
 }})();"#

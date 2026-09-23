@@ -1,0 +1,8 @@
+@import url("./base.css?v=22");
+@import url("../features/appearance/appearance.css?v=2");
+@import url("../features/onboarding/onboarding.css?v=1");
+@import url("../shared/ui/components.css?v=2");
+@import url("../features/home/widgets.css?v=3");
+@import url("../features/history/history.css?v=1");
+
+@import url("../features/accessibility/accessibility.css?v=2");

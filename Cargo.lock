@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "apb-desktop"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "apb-ai",
  "apb-bookmarks",
@@ -155,12 +155,14 @@ dependencies = [
  "minisign-verify",
  "serde",
  "serde_json",
+ "sha2",
  "tauri",
  "tauri-build",
  "tauri-plugin-single-instance",
  "time",
  "ureq",
  "uuid",
+ "windows",
  "windows-sys 0.59.0",
 ]
 
@@ -264,6 +266,7 @@ dependencies = [
  "sha1",
  "thiserror 1.0.69",
  "uuid",
+ "zeroize",
 ]
 
 [[package]]

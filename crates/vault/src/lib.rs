@@ -1,4 +1,4 @@
-﻿// Made by MrDuck && Ox-Alpha
+// Made by MrDuck && Ox-Alpha
 //! apb-vault
 //!
 //! Secure Vault (design doc §11, §10A.24): passwords, secure notes, credit
@@ -20,6 +20,7 @@ use sha1::Sha1;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
+use zeroize::Zeroize;
 
 #[derive(Debug, thiserror::Error)]
 pub enum VaultError {
@@ -129,7 +130,7 @@ struct VaultEnvelope {
 }
 
 const VERIFIER_PLAINTEXT: &[u8] = b"apb-vault-ok";
-const ENVELOPE_VERSION: u32 = 1;
+const ENVELOPE_VERSION: u32 = 2;
 
 fn b64(data: &[u8]) -> String {
     // Standard base64 without external crates (small alphabet table).
@@ -182,6 +183,13 @@ fn random_bytes(n: usize) -> Result<Vec<u8>> {
     let mut buf = vec![0u8; n];
     getrandom::getrandom(&mut buf).map_err(|e| VaultError::Crypto(e.to_string()))?;
     Ok(buf)
+}
+
+fn validate_kdf(salt: &[u8], m_kib: u32, t: u32, p: u32) -> Result<()> {
+    if salt.len() < 16 || !(19_456..=262_144).contains(&m_kib) || !(1..=10).contains(&t) || !(1..=8).contains(&p) {
+        return Err(VaultError::Crypto("invalid or unsafe Argon2 parameters".into()));
+    }
+    Ok(())
 }
 
 fn derive_key(passphrase: &str, salt: &[u8], m_kib: u32, t: u32, p: u32) -> [u8; 32] {
@@ -396,6 +404,8 @@ pub struct VaultFile {
 impl VaultFile {
     pub fn unlock(self, passphrase: &str) -> Result<Vault> {
         let salt = unb64(&self.envelope.kdf_salt_b64)?;
+        if !matches!(self.envelope.version, 1 | ENVELOPE_VERSION) { return Err(VaultError::Crypto("unsupported vault version".into())); }
+        validate_kdf(&salt, self.envelope.argon_m_kib, self.envelope.argon_t, self.envelope.argon_p)?;
         let key = derive_key(
             passphrase,
             &salt,
@@ -404,7 +414,7 @@ impl VaultFile {
             self.envelope.argon_p,
         );
         let verifier = unb64(&self.envelope.verifier_b64)?;
-        decrypt(&key, &verifier)?; // Err(AuthFailed) on wrong passphrase
+        if decrypt(&key, &verifier)? != VERIFIER_PLAINTEXT { return Err(VaultError::AuthFailed); }
         let payload = if self.envelope.payload_b64.is_empty() {
             Vec::new()
         } else {
@@ -449,15 +459,15 @@ impl Vault {
         if path.exists() {
             return Err(VaultError::AlreadyInitialized);
         }
-        if passphrase.chars().count() < 4 {
-            return Err(VaultError::Crypto("passphrase слишком короткий (минимум 4 символа)".into()));
+        if passphrase.chars().count() < 8 {
+            return Err(VaultError::Crypto("passphrase слишком короткий (минимум 8 символов)".into()));
         }
         let salt = random_bytes(16)?;
         let envelope = VaultEnvelope {
             version: ENVELOPE_VERSION,
             kdf_salt_b64: b64(&salt),
-            argon_m_kib: 19_456, // 19 MiB, OWASP baseline
-            argon_t: 2,
+            argon_m_kib: 65_536, // 64 MiB; interactive desktop baseline
+            argon_t: 3,
             argon_p: 1,
             verifier_b64: String::new(),
             payload_b64: String::new(),
@@ -494,12 +504,25 @@ impl Vault {
     }
 
     pub fn lock(&mut self) {
+        if let LockState::Unlocked { key, .. } = &mut self.state { key.zeroize(); }
         self.state = LockState::Locked;
         self.entries_cache.clear();
     }
 
+    /// Records explicit trusted UI activity; web content cannot call this.
+    pub fn touch_activity(&mut self) -> Result<()> {
+        if self.is_locked() { self.lock(); return Err(VaultError::Locked); }
+        self.touch();
+        Ok(())
+    }
+
+    pub fn auto_lock_secs(&self) -> u64 { self.auto_lock.after_secs }
+
+
     pub fn unlock_existing(&mut self, passphrase: &str) -> Result<()> {
         let salt = unb64(&self.envelope.kdf_salt_b64)?;
+        if !matches!(self.envelope.version, 1 | ENVELOPE_VERSION) { return Err(VaultError::Crypto("unsupported vault version".into())); }
+        validate_kdf(&salt, self.envelope.argon_m_kib, self.envelope.argon_t, self.envelope.argon_p)?;
         let key = derive_key(
             passphrase,
             &salt,
@@ -508,7 +531,7 @@ impl Vault {
             self.envelope.argon_p,
         );
         let verifier = unb64(&self.envelope.verifier_b64)?;
-        decrypt(&key, &verifier)?; // Err(AuthFailed) on wrong passphrase
+        if decrypt(&key, &verifier)? != VERIFIER_PLAINTEXT { return Err(VaultError::AuthFailed); }
         let payload = if self.envelope.payload_b64.is_empty() {
             Vec::new()
         } else {
@@ -572,7 +595,7 @@ impl Vault {
     }
 
     /// Metadata-only listing (safe summaries, no secrets).
-    pub fn list_summaries(&self) -> Result<Vec<(Uuid, String, String)>> {
+    pub fn list_summaries(&mut self) -> Result<Vec<(Uuid, String, String)>> {
         if self.is_locked() {
             return Err(VaultError::Locked);
         }
@@ -583,21 +606,31 @@ impl Vault {
             .collect())
     }
 
+    /// Returns a clone for an explicit local vault-to-vault import. This API
+    /// stays inside the Rust backend and is never exposed directly to pages.
+    pub fn entries_for_import(&mut self) -> Result<Vec<Entry>> {
+        if self.is_locked() { return Err(VaultError::Locked); }
+        self.touch();
+        Ok(self.entries_cache.clone())
+    }
+
     /// Full entry content — only through explicit user action in the UI.
 // Made by MrDuck && Ox-Alpha
-    pub fn reveal_entry(&self, id: Uuid) -> Result<Entry> {
+    pub fn reveal_entry(&mut self, id: Uuid) -> Result<Entry> {
         if self.is_locked() {
             return Err(VaultError::Locked);
         }
-        self.entries_cache
+        let found = self.entries_cache
             .iter()
             .find(|e| e.id == id)
             .cloned()
-            .ok_or(VaultError::NotFound(id))
+            .ok_or(VaultError::NotFound(id));
+        if found.is_ok() { self.touch(); }
+        found
     }
 
     /// Live TOTP code for an entry with a `totp_secret`.
-    pub fn totp_code_for(&self, id: Uuid) -> Result<String> {
+    pub fn totp_code_for(&mut self, id: Uuid) -> Result<String> {
         let entry = self.reveal_entry(id)?;
         match entry.kind {
             EntryKind::Password { totp_secret: Some(secret), .. } => {
@@ -631,6 +664,48 @@ impl Vault {
         self.persist_entries()?;
         Ok(imported)
     }
+}
+
+// ---------------------------------------------------------------------------
+// Portable encrypted container (profile sync/backups; no cloud involved)
+// ---------------------------------------------------------------------------
+#[derive(Debug, Serialize, Deserialize)]
+struct PortableEnvelope {
+    magic: String,
+    version: u32,
+    kdf: String,
+    salt_b64: String,
+    argon_m_kib: u32,
+    argon_t: u32,
+    argon_p: u32,
+    payload_b64: String,
+}
+
+/// Encrypt arbitrary profile JSON with independent random salt and nonce.
+pub fn encrypt_portable(plaintext: &[u8], passphrase: &str) -> Result<String> {
+    if passphrase.chars().count() < 10 {
+        return Err(VaultError::Crypto("фраза контейнера должна содержать минимум 10 символов".into()));
+    }
+    let salt=random_bytes(16)?;let m=65_536;let t=3;let p=1;
+    let mut key=derive_key(passphrase,&salt,m,t,p);
+    let blob=encrypt(&key,plaintext)?;key.zeroize();
+    serde_json::to_string_pretty(&PortableEnvelope{
+        magic:"APB-E2E-PROFILE".into(),version:1,kdf:"argon2id-v19".into(),salt_b64:b64(&salt),
+        argon_m_kib:m,argon_t:t,argon_p:p,payload_b64:b64(&blob)
+    }).map_err(Into::into)
+}
+
+pub fn decrypt_portable(container:&str,passphrase:&str)->Result<Vec<u8>>{
+    let env:PortableEnvelope=serde_json::from_str(container)?;
+    if env.magic!="APB-E2E-PROFILE"||env.version!=1||env.kdf!="argon2id-v19"{
+        return Err(VaultError::Crypto("неподдерживаемый контейнер APB".into()));
+    }
+    if env.argon_m_kib<19_456||env.argon_m_kib>262_144||env.argon_t==0||env.argon_t>10||env.argon_p==0||env.argon_p>8{
+        return Err(VaultError::Crypto("небезопасные параметры контейнера".into()));
+    }
+    let salt=unb64(&env.salt_b64)?;if salt.len()<16{return Err(VaultError::Crypto("короткая соль".into()))}
+    let mut key=derive_key(passphrase,&salt,env.argon_m_kib,env.argon_t,env.argon_p);
+    let out=decrypt(&key,&unb64(&env.payload_b64)?);key.zeroize();out
 }
 
 #[cfg(test)]
@@ -699,7 +774,7 @@ mod tests {
         assert!(matches!(file.unlock("wrong"), Err(VaultError::AuthFailed)));
 
         let file = Vault::open(&path).unwrap().unwrap();
-        let vault = file.unlock("correct horse battery staple").unwrap();
+        let mut vault = file.unlock("correct horse battery staple").unwrap();
         let revealed = vault.reveal_entry(entry.id).unwrap();
         match revealed.kind {
             EntryKind::Password { password, totp_secret, .. } => {
@@ -715,12 +790,12 @@ mod tests {
     fn ciphertext_on_disk_never_contains_plaintext() {
         let path = tmp_path("plaintext");
         let secret = "SUPER-SECRET-PAYLOAD-42";
-        let mut vault = Vault::create(&path, "pw1234").unwrap();
+        let mut vault = Vault::create(&path, "pw12345678").unwrap();
         vault.add_entry(EntryKind::SecureNote { title: "s".into(), body: secret.into() }).unwrap();
         drop(vault);
         let raw = std::fs::read_to_string(&path).unwrap();
         assert!(!raw.contains(secret));
-        assert!(!raw.contains("pw1234"));
+        assert!(!raw.contains("pw12345678"));
         std::fs::remove_file(&path).ok();
     }
 
@@ -751,7 +826,7 @@ mod tests {
     #[test]
     fn delete_missing_entry_errors() {
         let path = tmp_path("delete");
-        let mut vault = Vault::create(&path, "pw1234").unwrap();
+        let mut vault = Vault::create(&path, "pw12345678").unwrap();
         assert!(matches!(
             vault.delete_entry(Uuid::new_v4()),
             Err(VaultError::NotFound(_))
@@ -763,10 +838,10 @@ mod tests {
     fn export_import_merge_flow() {
         let a_path = tmp_path("export-a");
         let b_path = tmp_path("export-b");
-        let mut a = Vault::create(&a_path, "pass-a").unwrap();
+        let mut a = Vault::create(&a_path, "pass-a-123").unwrap();
         a.add_entry(EntryKind::ApiKey { title: "K1".into(), key: "sk-test-abcdef".into(), service: None }).unwrap();
 
-        let mut b = Vault::create(&b_path, "pass-b").unwrap();
+        let mut b = Vault::create(&b_path, "pass-b-123").unwrap();
         b.add_entry(EntryKind::SecureNote { title: "N1".into(), body: "x".into() }).unwrap();
 
         // Export produces a standalone encrypted copy:
@@ -774,7 +849,7 @@ mod tests {
         a.export_encrypted(&copy_path).unwrap();
         assert!(Vault::open(&copy_path).unwrap().is_some());
 
-        let merged = b.import_merge(&a_path, "pass-a").unwrap();
+        let merged = b.import_merge(&a_path, "pass-a-123").unwrap();
         assert_eq!(merged, 1);
         assert_eq!(b.list_summaries().unwrap().len(), 2);
 

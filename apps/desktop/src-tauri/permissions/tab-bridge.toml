@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-tab-bridge"
+description = "Allows untrusted tabs to report navigation and relay browser shortcuts only."
+commands.allow = ["shell_hotkey", "shell_open_tab", "page_url_push", "page_diag", "page_memory_report", "page_permission_check", "page_save_image", "clipboard_write", "page_fullscreen_enter", "page_fullscreen_exit", "tr_translate_batch", "tr_report"]

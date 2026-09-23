@@ -1,0 +1,1 @@
+(()=>{const m=new Map;window.APBFxRegistry={register:(n,f)=>m.set(n,f),create:(n,h,o)=>m.get(n)?.(h,o),names:()=>[...m.keys()]};})();

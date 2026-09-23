@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>APB-OVERLAY</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  #apbMenu {
+    display: none;
+    position: absolute;
+    top: 0; left: 0;
+    min-width: 210px;
+    max-width: 340px;
+    padding: 5px;
+    background: rgba(30, 30, 34, 0.95);
+    backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 12.5px;
+    color: #d7d8dd;
+    user-select: none;
+    z-index: 1;
+  }
+  #apbMenu .item {
+    padding: 7px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    transition: background 0.12s ease;
+  }
+  #apbMenu .item:hover { background: rgba(255, 255, 255, 0.09); }
+  #apbMenu .item.danger { color: #ff6575; }
+  #apbMenu .item.danger:hover { background: rgba(255, 101, 117, 0.14); }
+  #apbMenu .sep { height: 1px; margin: 4px 8px; background: rgba(255, 255, 255, 0.10); }
+  #apbMenu.omni { width: 100%; max-width: none; min-width: 0; padding: 6px; }
+  #apbMenu.omni .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 8px;
+  }
+  #apbMenu .omni-ic { width: 18px; text-align: center; flex: none; }
+  #apbMenu .omni-t { color: #e8e9ee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #apbMenu .omni-t b { color: #8ab4f8; font-weight: 600; }
+  #apbMenu .omni-comp { color: #8ab4f8; }
+  #apbMenu .omni-u {
+    color: #8a8f98;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: none;
+    max-width: 45%;
+    text-align: right;
+  }
+  #apbMenu.omni .item.sel, #apbMenu.omni .item:hover { background: rgba(255, 255, 255, 0.09); }
+  #apbForm {
+    display: none;
+    position: absolute;
+    inset: 0;
+    padding: 12px 14px;
+    background: rgba(30, 30, 34, 0.97);
+    backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 12.5px;
+    color: #d7d8dd;
+    user-select: none;
+    z-index: 1;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #apbForm .f-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
+  #apbForm .f-title { font-size: 13.5px; font-weight: 600; color: #e8e9ee; }
+  #apbForm .f-origin { font-size: 11px; color: #8a8f98; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #apbForm .f-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #apbForm .f-row label { font-size: 12.5px; color: #d7d8dd; }
+  #apbForm .f-row select {
+    flex: 1; max-width: 150px;
+    padding: 6px 24px 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.07);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%238a8f98' stroke-width='1.5' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    color: #e8e9ee;
+    font-family: inherit;
+    font-size: 12.5px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+  }
+  #apbForm .f-row select option { background: #1c1c20; color: #e8e9ee; }
+  #apbForm .f-row select:hover, #apbForm .f-row select:focus { border-color: rgba(138, 180, 248, 0.55); background-color: rgba(138, 180, 248, 0.10); }
+  #apbForm .f-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+  #apbForm .f-btn {
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #d7d8dd;
+    font-family: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  #apbForm .f-btn:hover { background: rgba(255, 255, 255, 0.12); }
+  #apbForm .f-btn.f-primary {
+    background: #8ab4f8;
+    border-color: transparent;
+    color: #1a1a1e;
+    font-weight: 600;
+  }
+  #apbForm .f-btn.f-primary:hover { background: #a3c4fa; }
+  /* Карточка перевода (translate): переключатель языка, галочка «всегда
+     переводить», кнопка ⋮ с мини-меню; тело — переведённый/оригинальный
+     текст. Рисуется отдельно от menu/form-режимов (журнал 2026-09-20). */
+  #apbTr {
+    display: none;
+    position: absolute;
+    inset: 0;
+    padding: 10px 12px;
+    background: rgba(30, 30, 34, 0.97);
+    backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 12.5px;
+    color: #d7d8dd;
+    user-select: none;
+    z-index: 1;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #apbTr .tr-top { display: flex; align-items: center; gap: 8px; }
+  #apbTr .tr-title { flex: 1; min-width: 0; }
+  #apbTr .tr-title b { display: block; font-size: 13px; color: #e8e9ee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #apbTr .tr-title span { display: block; font-size: 11px; color: #8a8f98; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #apbTr .tr-dots {
+    flex: none;
+    width: 28px; height: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #d7d8dd;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #apbTr .tr-dots:hover { background: rgba(255, 255, 255, 0.12); }
+  #apbTr .tr-langs { display: flex; align-items: center; gap: 6px; }
+  #apbTr .tr-langs select {
+    flex: 1; min-width: 0;
+    padding: 6px 24px 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.07);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%238a8f98' stroke-width='1.5' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    color: #e8e9ee;
+    font-family: inherit;
+    font-size: 12.5px;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+  }
+  #apbTr .tr-langs select option { background: #1c1c20; color: #e8e9ee; }
+  #apbTr .tr-langs select:hover, #apbTr .tr-langs select:focus { border-color: rgba(138, 180, 248, 0.55); background-color: rgba(138, 180, 248, 0.10); }
+  #apbTr .tr-langs .tr-arrow { flex: none; color: #8a8f98; font-size: 13px; }
+  #apbTr .tr-always { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d7d8dd; cursor: pointer; }
+  #apbTr .tr-always input { accent-color: #8ab4f8; cursor: pointer; }
+  #apbTr .tr-always small { color: #8a8f98; font-size: 11px; }
+  #apbTr .tr-body {
+    flex: 1;
+    min-height: 56px;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.18);
+    color: #e6e7ec;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  #apbTr .tr-body.tr-status { color: #8ab4f8; font-size: 12px; }
+  #apbTr .tr-body.tr-err { color: #ff6575; }
+  #apbTr .tr-foot { display: flex; justify-content: flex-end; gap: 8px; }
+  #apbTr .tr-btn {
+    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #d7d8dd;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #apbTr .tr-btn:hover { background: rgba(255, 255, 255, 0.12); }
+  #apbTr .tr-btn.tr-primary { background: #8ab4f8; border-color: transparent; color: #1a1a1e; font-weight: 600; }
+  #apbTr .tr-btn.tr-primary:hover { background: #a3c4fa; }
+  #apbTr .tr-dots-menu {
+    display: none;
+    position: absolute;
+    top: 42px; right: 12px;
+    min-width: 200px;
+    padding: 5px;
+    background: rgba(30, 30, 34, 0.98);
+    backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+    z-index: 2;
+  }
+  #apbTr .tr-dots-menu .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    color: #d7d8dd;
+    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+  #apbTr .tr-dots-menu .item:hover { background: rgba(255, 255, 255, 0.09); }
+  #apbTr .tr-dots-menu .item.danger { color: #ff6575; }
+  #apbTr .tr-dots-menu .item.danger:hover { background: rgba(255, 101, 117, 0.14); }
+  #apbTr .tr-dots-menu .item .it-ic { width: 16px; text-align: center; flex: none; font-size: 13px; }
+  #apbTr .tr-dots-sel { border-color: rgba(138, 180, 248, 0.55); background: rgba(138, 180, 248, 0.12); }
+  #apbTr .tr-langs .tr-src-sel,
+  #apbTr .tr-langs .tr-dst-sel { }
+</style>
+</head>
+<body>
+  <div id="apbMenu"></div>
+  <div id="apbForm"></div>
+  <div id="apbTr"></div>
+<script>
+(function () {
+  "use strict";
+  document.title = "APB-OVERLAY";
+  try {
+    var _i = window.__TAURI_INTERNALS__;
+    if (_i && _i.invoke) _i.invoke("debug_log_append", { lines: ["[ovl] page loaded"] }).catch(function(){});
+  } catch(_e){}
+  var menu = document.getElementById("apbMenu");
+  var form = document.getElementById("apbForm");
+  var trEl = document.getElementById("apbTr");
+  var I = window.__TAURI_INTERNALS__;
+  var mode = "menu";
+  function inv(name, args) {
+    try { if (I && I.invoke) return I.invoke(name, args).catch(function(){}); } catch (_e) {}
+  }
+  function txt(s) { return String(s == null ? "" : s); }
+  function hide() {
+    mode = "menu";
+    menu.style.display = "none";
+    menu.innerHTML = "";
+    menu.classList.remove("omni");
+    form.style.display = "none";
+    form.innerHTML = "";
+    trEl.style.display = "none";
+    trEl.innerHTML = "";
+  }
+  window.__apbHide = hide;
+  function buildForm(payload) {
+    var f = payload.form || {};
+    var head = document.createElement("div");
+    head.className = "f-head";
+    var title = document.createElement("div");
+    title.className = "f-title";
+    title.textContent = txt(f.title || "Настройка");
+    head.appendChild(title);
+    if (f.origin) {
+      var origin = document.createElement("div");
+      origin.className = "f-origin";
+      origin.textContent = txt(f.origin);
+      origin.title = txt(f.origin);
+      head.appendChild(origin);
+    }
+    form.appendChild(head);
+    var fields = Array.isArray(f.fields) ? f.fields : [];
+    fields.forEach(function (fd) {
+      var row = document.createElement("div");
+      row.className = "f-row";
+      var label = document.createElement("label");
+      label.textContent = txt(fd.label);
+      var sel = document.createElement("select");
+      sel.dataset.key = txt(fd.key);
+      ["ask", "allow", "deny"].forEach(function (v) {
+        var op = document.createElement("option");
+        op.value = v;
+        op.textContent = v === "ask" ? "Спрашивать" : v === "allow" ? "Разрешить" : "Запретить";
+        if (fd.value === v) op.selected = true;
+        sel.appendChild(op);
+      });
+      row.appendChild(label);
+      row.appendChild(sel);
+      form.appendChild(row);
+    });
+    var actions = document.createElement("div");
+    actions.className = "f-actions";
+    var mk = function (cls, label, action, primary) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "f-btn" + (primary ? " f-primary" : "");
+      b.dataset.formAction = action;
+      b.textContent = txt(label);
+      if (action === "save") b.disabled = !dirty; // Task 4: неактивен, пока форма не изменена
+      actions.appendChild(b);
+    };
+    var dirty = false; // Task 4: «Сохранить» только когда поле реально изменилось
+    form.addEventListener("change", function () {
+      var v = formValue();
+      var d = false;
+      for (var k in v) if (v[k] !== formInitial[k]) { d = true; break; }
+      if (d === dirty) return;
+      dirty = d;
+      actions.querySelectorAll("button[data-form-action=save]").forEach(function (b) { b.disabled = !dirty; });
+    });
+    var formInitial = formValue();
+    mk("", "Сбросить", "reset");
+    mk("", "Отмена", "close");
+    mk("", "Сохранить", "save", true);
+    form.appendChild(actions);
+    form.style.display = "flex";
+  }
+  function formValue() {
+    var out = {};
+    form.querySelectorAll("select[data-key]").forEach(function (sel) {
+      out[sel.dataset.key] = sel.value;
+    });
+    return out;
+  }
+  // Карточка перевода: переключатель «язык → язык», галочка «всегда
+  // переводить», ⋮ с мини-меню «что и как». Любое действие отсюда уходит
+  // в шелл через overlay_action, шелл выполняет перевод и перерисовывает
+  // карточку (APBPopup.card → handle.update) — сам попап окна не знает.
+  function langLabel(langs, code) {
+    if (code === "auto") return "Авто";
+    for (var i = 0; i < langs.length; i++) if (langs[i].target === code) return langs[i].lang;
+    return code;
+  }
+  function buildTr(payload) {
+    var t = payload.tr || {};
+    var langs = Array.isArray(t.langs) ? t.langs : [];
+    var from = (t.from && t.from !== "auto") ? t.from : "auto";
+    var to = t.to || "ru";
+    var status = t.status || "done";
+    var show = t.show || "trans";
+    var count = t.count || 0;
+    trEl.innerHTML = "";
+    // Шапка: название сайта + кнопка ⋮ с мини-меню
+    var top = document.createElement("div");
+    top.className = "tr-top";
+    var title = document.createElement("div");
+    title.className = "tr-title";
+    var b = document.createElement("b");
+    b.textContent = txt(t.origin || "");
+    var sub = document.createElement("span");
+    sub.textContent = langLabel(langs, to) + (show === "orig" ? " · оригинал" : " · перевод на странице");
+    title.appendChild(b); title.appendChild(sub);
+    var dotsBtn = document.createElement("button");
+    dotsBtn.type = "button";
+    dotsBtn.className = "tr-dots";
+    dotsBtn.textContent = "⋮";
+    dotsBtn.title = "Дополнительно";
+    top.appendChild(title); top.appendChild(dotsBtn);
+    // Мини-меню ⋮ — список «что да как» (иконка + подпись)
+    var dotsMenu = document.createElement("div");
+    dotsMenu.className = "tr-dots-menu";
+    var dotsItems = [
+      { label: show === "orig" ? "Показать перевод" : "Показать оригинал", act: "toggle", ic: show === "orig" ? "🌐" : "🔄" },
+      { label: "Перевести заново", act: "retranslate", ic: "↻" },
+      { label: "Копировать текст страницы", act: "copy", ic: "⧉" },
+      { label: "Не переводить этот сайт", act: "never", ic: "🚫", danger: true },
+      { label: "Сбросить настройки для сайта", act: "reset", ic: "↺" },
+    ];
+    dotsItems.forEach(function (d) {
+      var it = document.createElement("div");
+      it.className = "item" + (d.danger ? " danger" : "");
+      var ic = document.createElement("span");
+      ic.className = "it-ic";
+      ic.textContent = d.ic;
+      var lb = document.createElement("span");
+      lb.textContent = d.label;
+      it.appendChild(ic); it.appendChild(lb);
+      it.dataset.trDot = d.act;
+      dotsMenu.appendChild(it);
+    });
+    // Переключатель языка
+    var langsRow = document.createElement("div");
+    langsRow.className = "tr-langs";
+    var srcSel = document.createElement("select");
+    srcSel.className = "tr-src-sel";
+    var optAuto = document.createElement("option");
+    optAuto.value = "auto"; optAuto.textContent = "Авто";
+    if (from === "auto") optAuto.selected = true;
+    srcSel.appendChild(optAuto);
+    langs.forEach(function (l) {
+      var o = document.createElement("option");
+      o.value = l.target; o.textContent = l.lang;
+      if (from === l.target) o.selected = true;
+      srcSel.appendChild(o);
+    });
+    var arrow = document.createElement("span");
+    arrow.className = "tr-arrow";
+    arrow.textContent = "→";
+    var dstSel = document.createElement("select");
+    dstSel.className = "tr-dst-sel";
+    langs.forEach(function (l) {
+      var o = document.createElement("option");
+      o.value = l.target; o.textContent = l.lang;
+      if (to === l.target) o.selected = true;
+      dstSel.appendChild(o);
+    });
+    langsRow.appendChild(srcSel); langsRow.appendChild(arrow); langsRow.appendChild(dstSel);
+    // Галочка «всегда переводить»
+    var always = document.createElement("label");
+    always.className = "tr-always";
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!t.always;
+    var cbText = document.createElement("span");
+    cbText.textContent = "всегда переводить";
+    var note = document.createElement("small");
+    note.textContent = " этот сайт";
+    always.appendChild(cb); always.appendChild(cbText); always.appendChild(note);
+    // Тело: статус перевода (текст теперь переводится ПРЯМО на странице,
+    // в попапе — только индикация: loading/done/error/origninal).
+    var body = document.createElement("div");
+    body.className = "tr-body tr-status";
+    if (status === "loading") {
+      body.textContent = "Перевожу текст на странице…";
+    } else if (status === "error") {
+      body.classList.add("tr-err");
+      body.textContent = txt(t.err || "Ошибка перевода");
+    } else if (show === "orig") {
+      body.textContent = "Страница показана в оригинале. Перевод сохранён — его можно вернуть из ⋮.";
+    } else {
+      body.textContent = "Страница переведена на «" + langLabel(langs, to) + "»" + (count ? " (" + count + " блоков)" : "") + ". Всё заменено прямо на сайте.\n\nТекст оригинала не теряется: ⋮ → «Показать оригинал».";
+    }
+    // Низ: кнопки
+    var foot = document.createElement("div");
+    foot.className = "tr-foot";
+    var copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "tr-btn";
+    copyBtn.textContent = "Копировать";
+    copyBtn.dataset.trAct = "copy";
+    var toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.className = "tr-btn tr-primary";
+    toggleBtn.textContent = show === "orig" ? "Показать перевод" : "Показать оригинал";
+    toggleBtn.dataset.trAct = "toggle";
+    foot.appendChild(copyBtn); foot.appendChild(toggleBtn);
+    trEl.appendChild(top);
+    trEl.appendChild(dotsMenu);
+    trEl.appendChild(langsRow);
+    trEl.appendChild(always);
+    trEl.appendChild(body);
+    trEl.appendChild(foot);
+    trEl.style.display = "flex";
+    // События → в шелл (id берём из window.__apbId)
+    function send(action, value) {
+      try { if (I && I.invoke) I.invoke("overlay_action", { id: (window.__apbId || ""), action: action, value: value || {} }).catch(function(){}); } catch (_e) {}
+    }
+    dotsBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      dotsMenu.style.display = dotsMenu.style.display === "block" ? "none" : "block";
+    });
+    dotsMenu.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+    dotsMenu.addEventListener("click", function (e) {
+      var it = e.target.closest ? e.target.closest(".tr-dots-menu .item") : null;
+      if (!it || !it.dataset.trDot) return;
+      dotsMenu.style.display = "none";
+      send("tr-dot", { item: it.dataset.trDot });
+    });
+    srcSel.addEventListener("change", function () {
+      send("tr-lang", { from: srcSel.value, to: dstSel.value });
+    });
+    dstSel.addEventListener("change", function () {
+      send("tr-lang", { from: srcSel.value, to: dstSel.value });
+    });
+    cb.addEventListener("change", function () {
+      send("tr-always", { on: cb.checked });
+    });
+    copyBtn.addEventListener("click", function () {
+      send("tr-copy", {});
+    });
+    toggleBtn.addEventListener("click", function () {
+      send("tr-dot", { item: "toggle" });
+    });
+  }
+  window.__apbShow = function (payload) {
+    window.__apbId = payload && payload.id ? String(payload.id) : "";
+    hide();
+    if (payload && payload.tr) {
+      mode = "tr";
+      buildTr(payload);
+      return;
+    }
+    if (payload && payload.form) {
+      mode = "form";
+      buildForm(payload);
+      return;
+    }
+    if (payload && payload.omni) {
+      mode = "omni";
+      menu.classList.add("omni");
+      (payload.items || []).forEach(function (it) {
+        var el = document.createElement("div");
+        el.className = "item" + (it.sel ? " sel" : "");
+        el.dataset.action = txt(it.action);
+        var ic = document.createElement("span"); ic.className = "omni-ic"; ic.textContent = txt(it.icon);
+        var tx = document.createElement("span"); tx.className = "omni-t"; tx.innerHTML = it.main || "";
+        var ur = document.createElement("span"); ur.className = "omni-u"; ur.textContent = txt(it.sub);
+        el.appendChild(ic); el.appendChild(tx); el.appendChild(ur);
+        menu.appendChild(el);
+      });
+      menu.style.display = "block";
+      menu.style.left = "0px";
+      menu.style.top = "0px";
+      return;
+    }
+    mode = "menu";
+    (payload.items || []).forEach(function (it) {
+      if (it.sep) { menu.appendChild(document.createElement("div")).className = "sep"; return; }
+      var el = document.createElement("div");
+      el.className = it.danger ? "item danger" : "item";
+      el.textContent = txt(it.label);
+      el.dataset.action = txt(it.action);
+      menu.appendChild(el);
+    });
+    if (!menu.childElementCount) { hide(); return; }
+    var menuW = menu.offsetWidth || 210;
+    var menuH = menu.offsetHeight || 160;
+    var x = Math.max(4, Math.min(payload.x || 0, window.innerWidth - menuW - 8));
+    var y = Math.max(4, Math.min(payload.y || 0, window.innerHeight - menuH - 8));
+    menu.style.display = "block";
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+  };
+  menu.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+  form.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+  trEl.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+  menu.addEventListener("click", function (e) {
+    var el = e.target.closest ? e.target.closest(".item") : null;
+    if (!el) return;
+    var action = el.dataset.action;
+    hide();
+    if (action) {
+      try { if (I && I.invoke) I.invoke("overlay_action", { id: (window.__apbId || ""), action: action }).catch(function(){}); } catch (_e) {}
+    }
+  });
+  form.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("button[data-form-action]") : null;
+    if (!b) return;
+    var action = b.dataset.formAction;
+    if (action === "close") {
+      try { if (I && I.invoke) I.invoke("overlay_hide", { id: (window.__apbId || "") }).catch(function(){}); } catch (_e) {}
+      return;
+    }
+    var value = formValue();
+    hide();
+    try { if (I && I.invoke) I.invoke("overlay_action", { id: (window.__apbId || ""), action: action, value: value }).catch(function(){}); } catch (_e) {}
+  });
+  document.addEventListener("mousedown", function () {
+    if (mode === "form" || mode === "tr") return;
+    if (menu.style.display === "block") {
+      if (mode === "omni") {
+        try { if (I && I.invoke) I.invoke("overlay_action", { id: (window.__apbId || ""), action: "omni-close" }).catch(function(){}); } catch (_e) {}
+      } else {
+        try { if (I && I.invoke) I.invoke("overlay_hide", { id: (window.__apbId || "") }).catch(function(){}); } catch (_e) {}
+      }
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (mode === "form" || mode === "tr") {
+      try { if (I && I.invoke) I.invoke("overlay_hide", { id: (window.__apbId || "") }).catch(function(){}); } catch (_e) {}
+      return;
+    }
+    if (menu.style.display === "block") {
+      if (mode === "omni") {
+        try { if (I && I.invoke) I.invoke("overlay_action", { id: (window.__apbId || ""), action: "omni-close" }).catch(function(){}); } catch (_e) {}
+      } else {
+        try { if (I && I.invoke) I.invoke("overlay_hide", { id: (window.__apbId || "") }).catch(function(){}); } catch (_e) {}
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>

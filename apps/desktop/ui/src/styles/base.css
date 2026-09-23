@@ -1,0 +1,3233 @@
+/* Made by MrDuck */
+/* ============================================================
+   APB — design system v3
+   Pure black & pure white themes. Flat, calm, no gimmicks.
+   Accent is user-configurable (Settings → Персонализация).
+   ============================================================ */
+
+:root {
+  --tb-h: 0px;
+  --bg: #000000;
+  --bg-soft: #0b0b0d;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-2: rgba(255, 255, 255, 0.09);
+
+  --glass-rgb: 8, 8, 10;
+  --glass-a: 0.85;
+  --glass: rgba(var(--glass-rgb), var(--glass-a));
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --text: #f2f2f4;
+  --text-dim: #a6a6b0;
+  --text-faint: #66666f;
+
+  --accent: #d7d7dc;
+  --on-accent: #0a0a0a;
+  --link: #7fb0ff;
+  --danger: #ff6575;
+
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+
+  --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.6);
+
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 16px;
+
+  --font-body: -apple-system, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", "Consolas", monospace;
+
+  --sidebar-w: 232px;
+  --toolbar-h: 46px;
+  --speed: 0.16s cubic-bezier(0.33, 1, 0.68, 1);
+
+  --row-pad: 9px 11px;
+  --rail-pad: 8px 10px;
+  --panel-pad: 18px 16px;
+}
+
+body.density-compact { --row-pad: 5px 9px; --rail-pad: 5px 8px; --panel-pad: 12px; }
+body.density-spacious { --row-pad: 12px 13px; --rail-pad: 12px 12px; --panel-pad: 26px 20px; }
+
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-soft: #eceef3;
+  --surface: rgba(20, 20, 45, 0.07);
+  --surface-2: rgba(20, 20, 45, 0.13);
+
+  --glass-rgb: 255, 255, 255;
+  --glass-a: 0.9;
+  --glass: rgba(var(--glass-rgb), var(--glass-a));
+  --border: rgba(20, 20, 45, 0.18);
+  --border-strong: rgba(20, 20, 45, 0.32);
+
+  --text: #141417;
+  --text-dim: #4d4d5a;
+  --text-faint: #85858f;
+
+  --accent: #17171a;
+  --on-accent: #ffffff;
+
+  --shadow-1: 0 2px 12px rgba(20, 20, 45, 0.14);
+  --shadow-2: 0 14px 40px rgba(20, 20, 45, 0.2);
+}
+
+* { box-sizing: border-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+}
+body.no-motion *, body.no-motion *::before, body.no-motion *::after {
+  transition-duration: 0.001ms !important; animation-duration: 0.001ms !important;
+}
+body.no-glass { --glass: var(--bg-soft); }
+
+html {
+  margin: 0;
+  height: 100vh;
+  background: var(--bg);
+  /* ПОЛНАЯ прозрачность окна (видно рабочий стол) обязана пройти СКВОЗЬ
+     html — он красил всё непрозрачным и гробил режим clear/blur. В
+     прозрачном режиме фон рисуют только реальные панели (сайдбар и т.д.). */
+}
+html.apb-window-clear,
+html.apb-window-clear body,
+html.apb-window-blur,
+html.apb-window-blur body {
+  background: transparent !important;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* прозрачный: сквозь него виден #apbBgLayer (фон всего интерфейса) */
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Слой фоновой картинки интерфейса (создаётся pzEnsureBgLayer в JS):
+   fixed за всем контентом, невидим для событий; включается через display:'' */
+#apbBgLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: none;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Шрифт заголовков: пусто = как основной (var(--font-body)) */
+h1, h2, h3, h4,
+.internal-title, .brand-name {
+  font-family: var(--font-head, var(--font-body));
+}
+
+/* ============================================================
+   Custom frameless window — controls live INSIDE the toolbar,
+   the whole toolbar row is the drag region (no separate strip).
+   ============================================================ */
+
+.win-controls {
+  display: flex; align-items: center; gap: 2px;
+  margin-left: 2px;
+}
+.win-controls button {
+  width: 34px; height: 30px;
+  border: none; border-radius: var(--r-sm);
+  background: none; color: var(--text-dim);
+  display: grid; place-items: center; cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.win-controls button:hover { background: var(--surface-2); color: var(--text); }
+.win-controls .wc-close:hover { background: #e5484d; color: #fff; }
+
+.app-shell {
+  height: calc(100vh - var(--tb-h));
+  margin-top: var(--tb-h);
+}
+
+/* Native controls (select popups, scrollbars) follow the theme */
+:root { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
+/* Solid backgrounds for selects so the native dropdown is readable */
+select, select option {
+  background-color: var(--bg-soft);
+  color: var(--text);
+}
+input[type="color"] { color-scheme: inherit; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; }
+
+button { font-family: inherit; font-size: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+a { color: var(--link); }
+
+.hidden { display: none !important; }
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   Shell layout
+   ============================================================ */
+
+.app-shell { display: flex; min-height: 0; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.workspace { flex: 1; display: flex; min-height: 0; }
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+
+.sidebar {
+  position: relative;
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(140%);
+  border-right: 1px solid var(--border-strong);
+  box-shadow: 1px 0 6px rgba(0, 0, 0, 0.06);
+  transition: width 0.22s var(--ease-swift, cubic-bezier(0.32, 0.72, 0, 1)), box-shadow var(--speed);
+}
+
+/* Hover-expand when collapsed — driven by JS (.peek), NOT :hover,
+   so clicking collapse instantly shows the narrow rail */
+body.collapsed .sidebar { width: 54px; z-index: 60; }
+.lbl, .brand-name { transition: opacity 0.12s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#collapseBtn { transition: transform var(--speed); }
+body.collapsed .sidebar.peek { width: var(--sidebar-w); box-shadow: var(--shadow-2); }
+body.collapsed .sidebar:not(.peek) :is(.lbl, .brand-name) { opacity: 0; width: 0; padding-left: 0; padding-right: 0; }
+body.collapsed .sidebar:not(.peek) .tab-pill-title,
+body.collapsed .sidebar:not(.peek) .tab-pill-close { display: none; }
+body.collapsed .sidebar:not(.peek) .side-head { justify-content: center; }
+body.collapsed .sidebar:not(.peek) #collapseBtn { transform: rotate(180deg); }
+body.collapsed .sidebar:not(.peek) .new-tab-btn { justify-content: center; padding: 8px 0; }
+body.collapsed .sidebar:not(.peek) .rail-item { justify-content: center; padding-left: 0; padding-right: 0; }
+body.collapsed .sidebar:not(.peek) .ws-pill { padding: 6px 8px; }
+body.collapsed .sidebar:not(.peek) .ws-pill span,
+body.collapsed .sidebar:not(.peek) .ws-x { display: none; }
+
+.sidebar-inner {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  transition: width 0.22s var(--ease-swift, cubic-bezier(0.32, 0.72, 0, 1));
+}
+
+.side-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px 6px;
+}
+.brand { display: flex; align-items: center; gap: 8px; user-select: none; }
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+  /* Логотип AP Browser (ui/assets/images/logo.png) без подложки */
+  background: url("../../public/images/logo.png?v=5") center / contain no-repeat;
+}
+.brand-name { font-weight: 800; font-size: 14px; letter-spacing: 0.02em; }
+
+.new-tab-btn {
+  margin: 4px 12px 8px;
+  display: flex; align-items: center; gap: 9px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none; border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-weight: 600; font-size: 12.5px;
+  cursor: pointer;
+  transition: filter var(--speed);
+}
+.new-tab-btn:hover { filter: brightness(1.15); }
+.new-tab-btn .nt-plus { font-size: 15px; line-height: 1; }
+body.collapsed .sidebar:not(.peek) .new-tab-btn { justify-content: center; padding: 8px 0; }
+
+.tab-list {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 2px 8px;
+  display: flex; flex-direction: column; gap: 3px;
+  scrollbar-width: thin;
+}
+
+.tab-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--r-sm);
+  /* обводка видна ВСЕГДА (чуть заметнее на фоне панели), не только при ховере */
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  cursor: pointer;
+  min-width: 0;
+  user-select: none; /* текст вкладки не выделяется при перетаскивании */
+  transition: background var(--speed), border-color var(--speed), transform 0.2s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1));
+}
+/* Новая вкладка появляется СВЕРХУ: плавно опускается с лёгким отскоком.
+   Класс tab-appear вешается только на реально новые вкладки (см. renderTabStrip),
+   чтобы при переключении вкладок ничего лишнего не мигало. */
+@keyframes tabDropIn {
+  from { opacity: 0; transform: translateY(-14px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.tab-pill.tab-appear { animation: tabDropIn 0.32s cubic-bezier(0.2, 0.9, 0.25, 1.18) backwards; }
+/* Перетаскиваемая вкладка */
+.tab-pill.dragging {
+  position: relative;
+  z-index: 50;
+  background: var(--surface-2);
+  box-shadow: var(--shadow-2);
+  opacity: 0.95;
+}
+.tab-pill:hover { background: var(--surface-2); transform: translateX(2px); }
+.tab-pill:active { transform: translateX(2px) scale(0.975); }
+.tab-pill.active {
+  background: var(--surface-2);
+  border-color: var(--border);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.tab-fav {
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+/* Настоящий фавикон сайта поверх буквы-фолбэка */
+.tab-fav .fav-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+.tab-fav-new { color: var(--accent); font-weight: 800; }
+.tab-pill-title {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12px; color: var(--text-dim);
+}
+.tab-pill.active .tab-pill-title { color: var(--text); }
+/* Член разделённого экрана */
+.tab-pill.split {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.tab-pill.split.active { border-color: var(--accent); }
+.tab-pill-close {
+  background: none; border: none; color: var(--text-faint);
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+  cursor: pointer; line-height: 1;
+}
+.tab-pill-close:hover { background: rgba(255, 100, 115, 0.18); color: var(--danger); }
+
+.side-tools {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 1px;
+}
+
+/* Workspace pills (Zen-style) */
+.ws-strip {
+  display: flex; align-items: flex-start; gap: 6px;
+  padding: 2px 12px 10px;
+}
+.ws-pills {
+  flex: 1; min-width: 0;
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.ws-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  max-width: 100%;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--speed);
+}
+.ws-pill span { overflow: hidden; text-overflow: ellipsis; }
+.ws-pill .ws-count {
+  font-size: 10px; font-weight: 700;
+  padding: 1px 6px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text-faint);
+}
+.ws-pill:hover { background: var(--surface-2); color: var(--text); }
+.ws-pill.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.ws-x {
+  background: none; border: none; color: var(--text-faint);
+  font-size: 13px; line-height: 1; cursor: pointer; padding: 0 1px;
+}
+.ws-x:hover { color: var(--danger); }
+body.collapsed .sidebar:not(.peek) .ws-pill { padding: 6px 8px; }
+body.collapsed .sidebar:not(.peek) .ws-pill span,
+body.collapsed .sidebar:not(.peek) .ws-x { display: none; }
+
+/* Download status chips */
+.dl-chip {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 999px;
+}
+.st-active { background: rgba(110, 168, 255, 0.18); color: #7fb0ff; }
+.st-done { background: rgba(67, 193, 122, 0.16); color: #43c17a; }
+.st-failed { background: rgba(255, 101, 117, 0.16); color: #ff6575; }
+.dl-main { flex: 1; min-width: 0; }
+.dl-nm {
+  font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Hourly weather strip */
+.wx-hourly { display: flex; gap: 6px; margin-top: 10px; width: 100%; flex-wrap: wrap; }
+.wx-h {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 5px 8px;
+  font-size: 10px; color: var(--text-dim);
+}
+.wx-h-i { font-size: 15px; line-height: 1; }
+.wx-h-v { font-weight: 700; color: var(--text); }
+
+/* Home widgets manager */
+.widgets-manage { position: relative; margin-top: 4px; }
+.widgets-manage .graph-menu { left: 0 !important; top: 34px !important; min-width: 240px; }
+.w-hide {
+  background: none; border: none; color: var(--text-faint);
+  cursor: pointer; font-size: 11px; padding: 0 2px;
+}
+.w-hide:hover { color: var(--danger); }
+.widget { position: relative; }
+.w-rz {
+  position: absolute; right: 1px; bottom: 1px;
+  width: 16px; height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--border-strong) 50%);
+  border-radius: 0 0 var(--r-lg) 0;
+  opacity: 0; transition: opacity 0.15s;
+}
+.widget:hover .w-rz { opacity: 1; }
+/* Light-theme readability fixes for components that used white-alpha */
+.wx-h { background: var(--surface-2); }
+
+.rail-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: var(--rail-pad);
+  border-radius: var(--r-sm);
+  background: none; border: none;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--speed), color var(--speed), transform 0.2s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1));
+}
+.rail-item .glyph { width: 18px; height: 18px; text-align: center; font-size: 14px; line-height: 1; flex-shrink: 0; transition: transform 0.22s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1)); }
+svg.ic { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn svg.ic { width: 15px; height: 15px; }
+.rail-item:hover { background: var(--surface-2); color: var(--text); transform: translateX(2px); }
+.rail-item:hover .glyph { transform: scale(1.14); }
+.rail-item:active { transform: translateX(2px) scale(0.975); }
+.rail-item:active .glyph { transform: scale(0.9); }
+.rail-item.active { background: var(--accent-soft, rgba(128,128,128,0.18)); color: var(--text); box-shadow: inset 3px 0 0 var(--accent); }
+body.collapsed .sidebar:not(.peek) .rail-item { justify-content: center; padding-left: 0; padding-right: 0; }
+
+/* ============================================================
+   Toolbar
+   ============================================================ */
+
+.toolbar {
+  position: relative;
+  height: var(--toolbar-h);
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 12px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+}
+/* На главной адресная строка не нужна — прячем её */
+body.on-home .toolbar .address-form { display: none !important; }
+/* Профиль/действия всегда прижаты к правому краю: без адресной строки
+   (главная, настройки) навигация остаётся слева, блока в середине нет. */
+.toolbar > .profile-group { margin-left: auto; }
+/* Every direct interactive child of the toolbar shares one height,
+   so the row reads as a single straight line instead of a jagged one. */
+.toolbar > .nav-group > .nav-btn,
+.toolbar > .profile-group > select,
+.toolbar > .profile-group > .icon-btn,
+.toolbar > .icon-btn,
+.toolbar .shield-badge {
+  height: 30px;
+  box-sizing: border-box;
+}
+
+.nav-group { display: flex; gap: 2px; flex-shrink: 0; }
+.nav-btn {
+  width: 30px; height: 30px;
+  border: none; border-radius: 50%;
+  background: none; color: var(--text-dim);
+  font-size: 15px; cursor: pointer;
+  display: grid; place-items: center;
+  transition: background var(--speed), color var(--speed);
+}
+.nav-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.nav-btn:disabled { opacity: 0.32; cursor: default; }
+
+.address-form {
+  flex: 1; min-width: 0; max-width: 780px;
+  margin: 0 auto;
+  display: flex; align-items: center;
+  position: relative;
+}
+.address-form input {
+  flex: 1; min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 134px 7px 16px; /* справа место под перевод+щит+тему+«перейти» */
+  color: var(--text); font-size: 12.5px;
+  transition: border-color var(--speed), box-shadow var(--speed);
+}
+/* Фавикон сайта в начале адресной строки (при показе названия/URL) */
+.addr-fav {
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+.address-form.has-fav input { padding-left: 36px; }
+.address-form input::placeholder { color: var(--text-faint); }
+.address-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft, rgba(128,128,128,0.18));
+}
+.address-form button {
+  position: absolute; right: 5px;
+  width: 26px; height: 26px;
+  border: none; border-radius: 50%;
+  background: var(--surface-2); color: var(--text-dim);
+  cursor: pointer; font-size: 13px;
+  display: grid; place-items: center;
+  transition: background var(--speed), color var(--speed);
+}
+.address-form button svg.ic { width: 13px; height: 13px; }
+.address-form button:hover { background: var(--accent); color: var(--on-accent); }
+/* Тёмная тема сайта — встроена в адресную строку слева от «перейти» */
+.address-form .addr-btn {
+  right: 36px;
+  background: none; border: none;
+  border-radius: 50%;
+}
+/* Разрешения сайта: щит слева от кнопки тёмной темы */
+.address-form .addr-btn#permAddrBtn {
+  right: 68px;
+}
+/* Перевод: ещё левее щита (перевод → щит → тёмная тема → «перейти») */
+.address-form .addr-btn#aiTranslateBtn {
+  right: 100px;
+}
+.address-form .addr-btn#permAddrBtn.perm-has-rules,
+.address-form .addr-btn#permAddrBtn.perm-pending {
+  background: var(--accent-soft, rgba(128,128,128,0.18));
+  color: var(--accent);
+}
+.address-form .addr-btn#permAddrBtn.perm-pending {
+  animation: permPulse 1.1s ease-in-out infinite;
+}
+@keyframes permPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft, rgba(128,128,128,0.18)); }
+  50% { box-shadow: 0 0 0 5px transparent; }
+}
+.address-form .addr-btn:hover { background: var(--surface-2); color: var(--text); }
+.address-form .addr-btn.active-dark {
+  background: var(--accent-soft, rgba(128,128,128,0.18));
+  color: var(--accent);
+}
+
+/* Попап разрешений сайта — дропдаун под щитом, внутри шапки (не перекрывается webview) */
+.profile-group { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.toolbar select {
+  max-width: 140px;
+  height: 30px; /* одна высота с nav-btn / icon-btn — ровный ряд */
+  padding: 0 12px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px; cursor: pointer;
+  transition: border-color var(--speed);
+}
+.toolbar select:hover { border-color: var(--border-strong); }
+
+.icon-btn {
+  flex-shrink: 0;
+  background: var(--surface); color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  cursor: pointer; font-size: 14px;
+  transition: color var(--speed), border-color var(--speed), background var(--speed);
+}
+.icon-btn:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface-2); }
+.icon-btn.small { width: 28px; height: 28px; font-size: 15px; }
+.icon-btn.ghost { background: none; border-color: transparent; }
+
+/* ============================================================
+   Side panel drawers
+   ============================================================ */
+
+.side-panel {
+  width: 0; flex: 0 0 0px;
+  overflow: hidden;
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(140%);
+  border-right: 1px solid transparent;
+  transition: flex-basis var(--speed), width var(--speed), border-color var(--speed);
+}
+/* Made by MrDuck */
+.side-panel.open {
+  width: var(--panel-w, 330px); flex: 0 0 var(--panel-w, 330px);
+  border-right-color: var(--border-strong);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.08);
+}
+.side-panel-inner {
+  width: var(--panel-w, 330px); height: 100%;
+  overflow-y: auto;
+  padding: var(--panel-pad);
+}
+
+/* Vivaldi-style: move the bookmarks/history/notes panel to the right side.
+   Reversing the flex row keeps all existing widths/handles working as-is. */
+body.panel-right .workspace { flex-direction: row-reverse; }
+body.panel-right .side-panel {
+  border-right: none;
+  border-left: 1px solid transparent;
+}
+body.panel-right .side-panel.open {
+  border-right-color: transparent;
+  border-left-color: var(--border-strong);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+}
+body.panel-right .pane-resizer.right { left: -4px; right: auto; }
+
+/* Vivaldi-style: move the tab sidebar to the right edge of the window. */
+body.sidebar-right .app-shell { flex-direction: row-reverse; }
+body.sidebar-right .sidebar {
+  border-right: none;
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -1px 0 6px rgba(0, 0, 0, 0.06);
+}
+
+.panel { display: none; }
+.panel.active { display: block; }
+/* Reliable open/switch animation for internal pages: driven by JS toggling
+   this class (see openInternal in sound-internalpages.js) with a forced
+   reflow in between, rather than relying on the browser to notice a
+   none->block transition (which is inconsistent when several panels
+   share the same parent and swap visibility back to back). */
+.panel.ip-anim { animation: riseIn 0.2s cubic-bezier(.2,.7,.3,1) both; }
+
+.panel-title {
+  font-size: 14.5px; font-weight: 700; color: var(--text);
+  margin: 0 0 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.panel-subtitle {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--text-faint);
+  margin: 20px 0 8px;
+}
+.panel-subtitle:first-child { margin-top: 0; }
+
+.list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.list li {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: var(--row-pad);
+  cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  transition: border-color var(--speed), background var(--speed),
+              transform 0.18s var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              box-shadow 0.22s var(--ease-out, ease);
+}
+.list li:hover {
+  border-color: var(--border-strong); background: var(--surface-2);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+}
+.list li:active { transform: translateY(0) scale(0.99); transition-duration: 0.06s; }
+.list li.empty {
+  cursor: default; color: var(--text-faint); justify-content: center;
+  border-style: dashed; padding: 18px 10px;
+}
+.list li.empty:hover { border-color: var(--border); background: var(--surface); transform: none; box-shadow: none; }
+.list li.active-profile { border-color: var(--accent); background: var(--accent-soft, rgba(128,128,128,0.14)); }
+.list .title { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list .meta {
+  color: var(--text-faint); font-size: 11px; font-family: var(--font-mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.list li button.close {
+  background: none; border: none; color: var(--text-faint);
+  cursor: pointer; width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.18s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1));
+}
+.list li button.close:hover { color: var(--danger); background: var(--surface-2); transform: scale(1.15); }
+.list li button.close:active { transform: scale(0.85); transition-duration: 0.05s; }
+
+.row { margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+.row input, .row select, .side-panel-inner > input, .side-panel-inner > select,
+.internal-page > input, .internal-page select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text); padding: 8px 10px;
+  transition: border-color var(--speed);
+}
+.row input:focus, .row select:focus,
+.side-panel-inner > input:focus, .side-panel-inner > select:focus,
+.internal-page > input:focus, .internal-page select:focus {
+  outline: none; border-color: var(--accent);
+}
+
+.add-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2px 12px 12px;
+  margin-bottom: 16px;
+}
+.add-form summary {
+  cursor: pointer; color: var(--text-dim);
+  padding: 9px 0; font-weight: 600; list-style: none;
+}
+.add-form summary:hover { color: var(--text); }
+.add-form summary::-webkit-details-marker { display: none; }
+.add-form input, .add-form textarea, .add-form select {
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text); padding: 8px 10px; margin-top: 7px; font-family: inherit;
+  transition: border-color var(--speed);
+}
+.add-form textarea { font-family: var(--font-mono); font-size: 12px; resize: vertical; }
+.add-form input:focus, .add-form textarea:focus, .add-form select:focus {
+  outline: none; border-color: var(--accent);
+}
+.add-form button {
+  margin-top: 10px;
+  background: var(--accent);
+  border: none; border-radius: var(--r-sm); color: var(--on-accent);
+  font-weight: 600; padding: 8px 12px; cursor: pointer; width: 100%;
+  transition: filter var(--speed);
+}
+.add-form button:hover { filter: brightness(1.15); }
+
+.checkbox-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 9px; color: var(--text-dim); font-size: 12.5px; cursor: pointer;
+}
+.checkbox-row input { width: auto; margin: 0; accent-color: var(--accent); }
+
+.ghost-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: var(--r-sm);
+  padding: 6px 12px; cursor: pointer;
+  margin-bottom: 6px;
+  transition: border-color var(--speed), color var(--speed), background var(--speed),
+              transform 0.16s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1));
+}
+.ghost-btn:hover { border-color: var(--border-strong); color: var(--text); background: var(--surface-2); }
+.ghost-btn:active { transform: scale(0.95); transition-duration: 0.05s; }
+#emergencyBtn.danger { border-color: rgba(255, 101, 117, 0.5); color: var(--danger); }
+#emergencyBtn.active-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+.hint { color: var(--text-faint); font-size: 11.5px; margin-top: 4px; line-height: 1.55; }
+
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.badge {
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim); font-family: var(--font-mono);
+  background: var(--surface);
+}
+
+.note-viewer { margin-top: 12px; }
+.note-viewer pre {
+  white-space: pre-wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px; font-family: var(--font-mono); font-size: 12px;
+  line-height: 1.6; color: var(--text);
+}
+.note-viewer .backlinks-row { margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 7px; flex-shrink: 0; }
+.dot.audit-ok { background: #43c17a; }
+.dot.audit-warn { background: #e5b04a; }
+.dot.audit-critical { background: #ff6575; }
+
+.chat-reply {
+  white-space: pre-wrap; word-break: break-word;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px; font-family: var(--font-mono); font-size: 12.5px;
+  max-height: 260px; overflow-y: auto; min-height: 42px;
+}
+
+.canvas-preview {
+  margin-top: 10px; max-height: 300px; overflow-y: auto;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px;
+}
+.canvas-preview:empty::after {
+  content: "Пока пусто — создайте документ и добавьте link-карточку";
+  color: var(--text-faint); font-size: 12px;
+}
+
+.mono { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim); word-break: break-all; }
+.list li .ghost-btn { margin-left: 6px; flex-shrink: 0; margin-bottom: 0; }
+
+.theme-buttons { display: flex; gap: 6px; margin-bottom: 8px; }
+.theme-buttons button {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-dim); padding: 8px; cursor: pointer;
+  transition: all var(--speed);
+}
+.theme-buttons button:hover { color: var(--text); border-color: var(--border-strong); }
+.theme-buttons button.active {
+  border-color: var(--accent); color: var(--text); background: var(--surface-2);
+}
+.theme-buttons button.ready {
+  background: var(--accent); color: var(--on-accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px rgba(124, 107, 255, 0.35);
+}
+
+.palette-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 96px; z-index: 90;
+}
+.palette {
+  background: var(--glass);
+  backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  width: 380px; padding: 12px;
+  box-shadow: var(--shadow-2);
+  animation: riseIn 0.16s ease both;
+}
+.palette input {
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: var(--font-mono); font-size: 12.5px;
+}
+.palette input:focus { outline: none; border-color: var(--accent); }
+.palette .list { margin-top: 9px; max-height: 280px; overflow-y: auto; }
+.palette .list .meta { font-family: var(--font-mono); color: var(--text-faint); }
+
+/* ============================================================
+   Browser view + home
+   ============================================================ */
+
+.browser-view {
+  flex: 1; min-width: 0;
+  position: relative;
+  background: var(--bg);
+}
+
+.browser-empty {
+  position: absolute; inset: 0;
+  overflow-y: auto;
+  display: flex; justify-content: center;
+  padding: 48px 32px;
+}
+
+.home { width: 100%; max-width: 720px; animation: riseIn 0.25s ease both; }
+
+.home-greeting {
+  font-size: 30px; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 8px 0 22px; text-align: center;
+}
+
+.home-search {
+  display: flex; align-items: center; position: relative;
+  width: min(680px, 100%); margin-inline: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 6px 5px 14px;
+  transition: border-color var(--speed);
+}
+/* Положение строки поиска: «По центру» — приветствие+поиск по вертикали.
+   align-self:stretch отменяет flex-start из components.css, иначе не хватит
+   высоты для авто-отступов и центрирование не сработает. */
+body.hs-center .browser-empty .home {
+  display: flex; flex-direction: column;
+  align-self: stretch;
+}
+body.hs-center .home-greeting { margin-top: auto; }
+body.hs-center .home-search { margin-bottom: auto; }
+.home-search input {
+  flex: 1; min-width: 0;
+  background: none; border: none; outline: none;
+  color: var(--text); font-size: 14px;
+}
+.home-search input::placeholder { color: var(--text-faint); }
+.home-search button {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border: none; border-radius: 50%;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 15px; cursor: pointer;
+  transition: filter var(--speed);
+}
+.home-search button:hover { filter: brightness(1.15); }
+
+.home-row-head { margin: 30px 0 12px; }
+.home-sec {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 12px;
+}
+.tile {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 6px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: transform var(--speed), background var(--speed), border-color var(--speed);
+  animation: riseIn 0.22s ease both;
+}
+.tile:hover {
+  transform: translateY(-3px);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.tile-av {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: transparent;
+}
+.tile-av img {
+  width: 34px; height: 34px;
+  object-fit: contain;
+}
+.tile-dragging { opacity: 0.35; }
+.tile.dnd-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.tile-name {
+  max-width: 100%;
+  font-size: 11.5px; color: var(--text-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tile:hover .tile-name { color: var(--text); }
+.tile-x {
+  position: absolute; top: 6px; right: 6px;
+  width: 18px; height: 18px;
+  border: none; border-radius: 50%;
+  background: var(--border-strong); color: var(--text);
+  font-size: 11px; line-height: 1; cursor: pointer;
+  opacity: 0; transition: opacity var(--speed);
+}
+.tile:hover .tile-x { opacity: 1; }
+.tile-x:hover { background: var(--danger); color: #fff; }
+
+.tile-add {
+  border-style: dashed;
+  color: var(--text-faint); font-size: 22px;
+  justify-content: center; min-height: 88px;
+}
+.tile-add:hover { color: var(--text); border-color: var(--border-strong); transform: none; }
+
+.recents { display: flex; flex-wrap: wrap; gap: 8px; }
+.recent-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  max-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px 6px 7px;
+  color: var(--text-dim); font-size: 12px;
+  cursor: pointer;
+  transition: all var(--speed);
+}
+.recent-chip:hover { border-color: var(--border-strong); color: var(--text); background: var(--surface-2); }
+.rc-fav {
+  width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: 6px;
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.recent-chip span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.home-sys { margin: 34px auto 0; display: block; }
+
+/* ============================================================
+   Internal pages (settings / vault / extensions)
+   ============================================================ */
+
+.internal-host {
+  position: absolute; inset: 0;
+  display: flex;
+  background: var(--bg);
+  overflow: hidden;
+  z-index: 5;
+}
+.internal-host:not(.hidden) { animation: riseIn 0.22s cubic-bezier(.2,.7,.3,1) both; }
+.isec-nav {
+  width: 190px; flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 18px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--bg-soft);
+}
+.isec-link {
+  display: flex; align-items: center; gap: 10px;
+  text-align: left;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  background: none; border: none;
+  color: var(--text-dim);
+  cursor: pointer; font-size: 12.5px;
+  transition: background var(--speed), color var(--speed);
+}
+.isec-link svg.ic { width: 16px; height: 16px; flex-shrink: 0; }
+.isec-link:hover { background: var(--surface-2); color: var(--text); }
+.isec-link.active { background: var(--accent-soft, rgba(128,128,128,0.16)); color: var(--text); }
+
+.isec-body { flex: 1; overflow-y: auto; padding: 26px 34px; }
+.internal-page { max-width: 640px; }
+.internal-page.wide-page { max-width: none; }
+.internal-title { font-size: 21px; font-weight: 800; margin: 0 0 16px; letter-spacing: -0.01em; }
+
+/* ============================================================
+   Settings layout: adjustable width + optional 2 columns
+   (user picks in Settings → Оформление).
+   ============================================================ */
+#internalHost .internal-page[data-searchable] {
+  max-width: var(--settings-w, 640px);
+}
+body.settings-2col .isec-body {
+  padding: 26px 34px 60px;
+}
+/* Two-column settings layout: real CSS multi-column (not CSS Grid), so
+   the browser balances content by HEIGHT across both columns — the
+   ~second half of what used to require scrolling now lands visibly in
+   column 2, instead of column 2 staying empty while everything piles
+   into column 1 (which is what plain grid row-interleaving gave us:
+   most sections only have one non-header block, so there was rarely
+   anything to place beside it in a second column). */
+body.settings-2col #internalHost .internal-page[data-searchable].active {
+  max-width: none;
+  column-count: 2;
+  column-gap: 30px;
+  column-fill: balance;
+}
+/* Keep each row/button/control-group intact — multi-column layout will
+   otherwise happily slice a `.pz-row` or `.pz-grid` in half across the
+   column break. Long, naturally-scrollable content (`.list`, `details`)
+   is left free to split like an ordinary paragraph would; forcing those
+   to stay whole would make balancing lumpy (one big indivisible chunk
+   dominating a column). Buttons keep their natural compact size in
+   multi-column layout automatically — no stretching to fight here. */
+body.settings-2col #internalHost .internal-page[data-searchable].active > *:not(.list):not(details) {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+body.settings-2col .pz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+/* Personalization controls */
+.pz-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.pz-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  color: var(--text-dim); font-size: 12.5px;
+}
+.pz-row input[type="color"] {
+  width: 42px; height: 28px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: none; cursor: pointer; padding: 2px;
+}
+.pz-row input[type="range"] { width: 170px; accent-color: var(--accent); }
+.pz-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+.pz-row select {
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 8px;
+}
+
+/* ============================================================
+   Note editor split pane
+   ============================================================ */
+
+.editor-pane {
+  width: var(--editor-w, 46%); min-width: 340px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-soft);
+  display: flex; flex-direction: column;
+  position: relative;
+}
+/* AI chat — левая выдвижная панель (flex-drawer, как .side-panel).
+   Она СДВИГАЕТ browser-view (а не накрывает его), поэтому нативные
+   вебвью получают новый rect через syncPageLayout и панель видна —
+   контракт #5: дочерние WebView2 рисуются поверх HTML, но drawer
+   исключает перекрытие. Скрытие через width:0/flex:0 0 0, а не
+   display:none, чтобы работала плавная анимация выезда. */
+#aiPane {
+  order: -1;
+  position: relative;
+  width: 0; flex: 0 0 0px;
+  min-width: 0;
+  overflow: hidden;
+  border: none;
+  border-right: 1px solid transparent;
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(140%);
+  transition: flex-basis var(--speed), width var(--speed),
+              border-color var(--speed), box-shadow var(--speed);
+}
+#aiPane:not(.hidden) {
+  width: var(--ai-w, 420px); flex: 0 0 var(--ai-w, 420px);
+  min-width: 320px;
+  border-right-color: var(--border-strong);
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.18);
+}
+/* отмена скрытия display:none (запрещает анимацию ширины) */
+#aiPane.hidden {
+  display: flex !important;
+  width: 0 !important;
+  flex: 0 0 0 !important;
+  min-width: 0 !important;
+  border-right-color: transparent;
+  box-shadow: none;
+}
+/* внутренности держим фиксированной ширины (как .side-panel-inner),
+   чтобы текст не сквозился, пока drawer едет */
+#aiPane > :not(.pane-resizer) { width: var(--ai-w, 420px); }
+body.panel-right #aiPane {
+  border-right: none;
+  border-left: 1px solid transparent;
+}
+body.panel-right #aiPane:not(.hidden) {
+  border-right-color: transparent;
+  border-left-color: var(--border-strong);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.18);
+}
+.editor-pane.hidden { display: none; }
+
+.editor-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.editor-head input {
+  flex: 1; min-width: 60px;
+  background: transparent; border: none;
+  color: var(--text); font-size: 13px; font-weight: 700;
+}
+.editor-head input:focus { outline: none; }
+.editor-tabs { display: flex; gap: 2px; }
+.editor-tabs button {
+  background: transparent;
+  border: 1px solid transparent; border-radius: var(--r-sm);
+  color: var(--text-dim); padding: 5px 10px;
+  cursor: pointer; font-size: 12px;
+  transition: all var(--speed);
+}
+.editor-tabs button.active { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.ed-save-state { font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+
+.etab { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.etab.hidden { display: none; }
+
+.md-toolbar, .draw-tools {
+  display: flex; align-items: center; gap: 3px; flex-wrap: wrap;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.md-toolbar button, .draw-tools button {
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  color: var(--text-dim);
+  min-width: 28px; height: 26px; padding: 0 7px;
+  cursor: pointer; font-size: 12px;
+  transition: all var(--speed);
+}
+.md-toolbar button:hover, .draw-tools button:hover { color: var(--text); border-color: var(--border-strong); }
+.draw-tools button.active { border-color: var(--accent); color: var(--text); background: var(--surface-2); }
+.tb-sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; }
+.draw-insert { margin-left: auto; }
+
+#edText {
+  flex: 1; resize: none; border: none; outline: none;
+  background: var(--bg-soft); color: var(--text);
+  padding: 14px 16px;
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.6;
+}
+
+.draw-stage { flex: 1; position: relative; min-height: 0; overflow: hidden; }
+#drawCanvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--bg) 0% 50%) 50%/16px 16px;
+  touch-action: none; cursor: crosshair;
+}
+
+/* Markdown preview */
+.md-preview { flex: 1; overflow-y: auto; padding: 16px 20px; line-height: 1.65; font-size: 13.5px; }
+.md-preview h1, .md-preview h2, .md-preview h3, .md-preview h4 { margin: 0.9em 0 0.4em; }
+.md-preview h1 { font-size: 1.55em; } .md-preview h2 { font-size: 1.3em; } .md-preview h3 { font-size: 1.12em; }
+.md-preview code { font-family: var(--font-mono); font-size: 0.92em; background: var(--surface-2); border-radius: 4px; padding: 1px 5px; }
+.md-preview pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px 12px; overflow-x: auto; }
+.md-preview pre code { background: none; padding: 0; }
+.md-preview blockquote {
+  border-left: 3px solid var(--text-dim);
+  margin: 0.6em 0; padding: 4px 12px;
+  color: var(--text-dim); background: var(--surface);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.md-preview table { border-collapse: collapse; margin: 0.8em 0; width: auto; max-width: 100%; display: block; overflow-x: auto; }
+.md-preview th, .md-preview td { border: 1px solid var(--border); padding: 6px 11px; text-align: left; }
+.md-preview th { background: var(--surface-2); font-weight: 600; }
+.md-preview tr:nth-child(even) td { background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
+.md-preview .wikilink { color: var(--link); cursor: pointer; border-bottom: 1px dashed var(--link); }
+.md-preview .hashtag { color: var(--link); opacity: 0.85; font-size: 0.9em; }
+.md-preview .task-line { list-style: none; margin-left: -18px; }
+.md-preview img { max-width: 100%; border-radius: var(--r-sm); border: 1px solid var(--border); }
+.md-preview hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+.md-preview .callout {
+  border: 1px solid var(--border);
+  border-left: 3px solid #e5b04a;
+  border-radius: var(--r-sm);
+  padding: 8px 12px; margin: 0.7em 0;
+  background: var(--surface);
+}
+
+/* Obsidian-style markdown extras */
+.md-preview mark {
+  background: color-mix(in srgb, #e5b04a 38%, transparent);
+  color: inherit; padding: 0 3px; border-radius: 3px;
+}
+.md-preview .md-frontmatter {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 8px 10px; margin: 0 0 1em;
+}
+/* Made by MrDuck */
+.md-preview .md-frontmatter .fm { font-size: 11.5px; font-family: var(--font-mono); color: var(--text-dim); }
+.md-preview .md-frontmatter .fm b { color: var(--text-faint); font-weight: 600; }
+.md-preview sup.fnref { font-size: 0.75em; color: var(--link); cursor: default; }
+.md-preview .footnotes { margin-top: 1.2em; border-top: 1px solid var(--border); padding-top: 0.6em; font-size: 0.92em; color: var(--text-dim); }
+.md-preview input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; vertical-align: -2px; }
+.md-preview li.task-line.done .task-text { text-decoration: line-through; opacity: 0.6; }
+
+/* ============================================================
+   Resizable panes (drag handles)
+   ============================================================ */
+
+.pane-resizer {
+  position: absolute;
+  top: 0; bottom: 0; left: -4px; width: 8px;
+  cursor: col-resize;
+  z-index: 30;
+}
+.pane-resizer.right { left: auto; right: -4px; }
+.pane-resizer:hover, body.resizing .pane-resizer.active { background: var(--border-strong); }
+body.resizing { user-select: none; cursor: col-resize; }
+
+/* ============================================================
+   AI chat pane
+   ============================================================ */
+
+.pane-title-sm { flex: 1; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ghost-btn.small { padding: 3px 9px; font-size: 11px; margin-bottom: 0; }
+.primary-btn {
+  width: 100%; margin-top: 10px;
+  background: var(--accent); color: var(--on-accent);
+  border: none; border-radius: var(--r-sm);
+  font-weight: 600; padding: 9px 12px; cursor: pointer;
+  transition: filter var(--speed);
+}
+.primary-btn:hover { filter: brightness(1.15); }
+
+.ai-setup {
+  padding: 18px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.ai-setup h3 { margin: 0 0 4px; font-size: 15px; }
+#aiSetupStatus { min-height: 16px; }
+
+#aiChatWrap {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  padding: 10px 12px 12px;
+}
+
+.chat-log {
+  flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 6px 2px;
+}
+.chat-msg {
+  max-width: 86%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  line-height: 1.5;
+  font-size: 12.8px;
+  white-space: pre-wrap; word-break: break-word;
+  animation: riseIn 0.15s ease both;
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: var(--accent); color: var(--on-accent);
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.bot {
+  align-self: flex-start;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.chat-msg.err { background: rgba(255, 101, 117, 0.14); border-color: rgba(255,101,117,0.4); color: var(--danger); align-self: stretch; }
+
+.chat-input-row {
+  display: flex; align-items: flex-end; gap: 8px;
+  margin-top: 10px;
+}
+.chat-input-row textarea {
+  flex: 1; min-width: 0; resize: none;
+  max-height: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text); font-family: inherit; font-size: 12.8px;
+  padding: 9px 12px;
+  transition: border-color var(--speed);
+}
+.chat-input-row textarea:focus { outline: none; border-color: var(--accent); }
+.chat-input-row button {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border: none; border-radius: 50%;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 14px; cursor: pointer;
+  transition: filter var(--speed), opacity var(--speed);
+}
+.chat-input-row button:hover:not(:disabled) { filter: brightness(1.15); }
+.chat-input-row button:disabled { opacity: 0.45; cursor: default; }
+#aiMeta { margin: 6px 2px 0; min-height: 14px; }
+
+/* ============================================================
+   Graph tab (notes network)
+   ============================================================ */
+
+.etab-graph { position: relative; }
+.graph-tools {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.graph-tools .ghost-btn { margin-bottom: 0; }
+#graphStage { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
+#graphSvg { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#graphSvg.panning { cursor: grabbing; }
+.gnode { cursor: pointer; }
+.gnode circle { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1.5; transition: fill 0.15s; }
+.gnode:hover circle, .gnode.sel circle { fill: var(--accent-soft); stroke: var(--accent); }
+.gnode text { fill: var(--text-dim); font-size: 11px; pointer-events: none; }
+.gnode:hover text { fill: var(--text); }
+.gedge { stroke: var(--border-strong); stroke-width: 1.4; transition: stroke 0.15s; }
+.gedge.hl { stroke: var(--accent); stroke-width: 2; }
+
+/* ============================================================
+   Full history (settings)
+   ============================================================ */
+
+.hist-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 6px;
+  align-items: start;
+  max-height: none;
+}
+.hist-list li { align-items: flex-start; margin: 0; }
+.hist-day { grid-column: 1 / -1; }
+.hist-list .h-main { flex: 1; min-width: 0; }
+.hist-list .h-title { font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-list .h-url { font-size: 11px; color: var(--link); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-list .h-meta { font-size: 10.5px; color: var(--text-faint); }
+.hist-list .h-prof {
+  flex-shrink: 0; align-self: center;
+  font-size: 10px; padding: 3px 8px; border-radius: 999px;
+  background: var(--surface-2); color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.hist-tools .hist-tool-row { display: flex; align-items: center; gap: 10px; }
+.hist-day {
+  list-style: none;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-faint);
+  background: none; border: none; padding: 10px 2px 2px; cursor: default;
+}
+.hist-day:hover { background: none; border: none; }
+.danger-ghost:hover { border-color: var(--danger); color: var(--danger); }
+button.ghost-btn.danger { color: var(--danger); }
+button.ghost-btn.danger:hover { background: rgba(255, 101, 117, 0.12); border-color: rgba(255, 101, 117, 0.45); }
+
+/* Graph manual editing */
+.graph-auto-row { margin-top: 0; }
+.graph-zoom { display: flex; gap: 3px; }
+.graph-zoom button {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text-dim);
+  cursor: pointer; font-size: 13px; line-height: 1;
+  transition: all var(--speed);
+}
+.graph-zoom button:hover { color: var(--text); border-color: var(--border-strong); }
+#graphStage { flex: 1; position: relative; overflow: hidden; background:
+  radial-gradient(600px 300px at 50% 40%, var(--accent-soft, rgba(128,128,128,.08)), transparent 70%),
+  var(--bg); }
+#graphSvg { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#graphSvg.panning { cursor: grabbing !important; }
+svg.wiring { cursor: crosshair !important; }
+
+.gnode circle.body {
+  fill: var(--surface-2);
+  stroke: var(--border-strong); stroke-width: 1.6;
+  filter: url(#apbGlow);
+  transition: fill 0.15s, stroke 0.15s;
+}
+.gnode.hub circle.body { stroke-width: 2.4; }
+.gnode text { fill: var(--text-dim); font-size: 11px; pointer-events: none; }
+.gnode .ghandle {
+  fill: var(--accent); stroke: var(--bg); stroke-width: 1.5;
+  opacity: 0; transition: opacity 0.12s;
+  cursor: crosshair;
+}
+.gnode:hover .ghandle, svg.wiring .ghandle { opacity: 1; }
+
+.gedge { stroke: var(--border-strong); stroke-width: 1.4; opacity: 0.55; transition: opacity 0.15s, stroke 0.15s; }
+.gedge.hl {
+  stroke-dasharray: 7 5;
+  animation: gflow 0.7s linear infinite;
+}
+@keyframes gflow { to { stroke-dashoffset: -12; } }
+
+/* Obsidian-style focus: hovering a node dims everything else */
+#graphSvg.focus .gedge:not(.hl) { opacity: 0.06; }
+#graphSvg.focus .gnode:not(.hl) { opacity: 0.22; }
+#graphSvg.focus .gnode:not(.hl) text { opacity: 0; }
+#graphSvg .gnode.hl circle.body { stroke: var(--accent); fill: var(--accent-soft); }
+#graphSvg .gedge.hl { stroke: var(--accent); stroke-width: 2.2; opacity: 1; }
+#graphSvg .gnode.hl text { fill: var(--text); }
+
+.wire-line { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; pointer-events: none; }
+
+/* ===== GRAPH v2 — canvas engine ===== */
+#graphCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#blockLayer { position: absolute; inset: 0; pointer-events: none; }
+#blockLayer .board-item { pointer-events: auto; transform-origin: 0 0; display: flex; flex-direction: column; overflow: hidden; }
+#blockLayer .board-item .bi-body { flex: 1; min-height: 0; overflow-y: auto; }
+#graphStage.wiring, #graphStage.wiring * { cursor: crosshair !important; }
+
+/* Universal wiring: fat invisible handle hit-zones, target highlight,
+   deletable link curves (fat invisible twins) */
+#graphStage.wiring, #graphStage.wiring * { cursor: crosshair !important; }
+.gnode .gh-hit { fill: transparent; stroke: transparent; pointer-events: all; cursor: crosshair; opacity: 0 !important; }
+#graphSvg .lk-hit { fill: none; stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
+#graphSvg .gedge.lk { stroke: var(--accent); stroke-width: 2.3; opacity: 0.95; }
+#graphSvg .lk-glow { fill: none; stroke: var(--accent); stroke-width: 7; opacity: 0.22; pointer-events: none; }
+#graphSvg .lk-dot { fill: var(--accent); stroke: var(--bg); stroke-width: 1; pointer-events: none; }
+#graphSvg .gnode.wire-target circle.body { stroke: var(--accent); stroke-width: 2.6; fill: var(--accent-soft); }
+.board-item.wire-target { outline: 2px dashed var(--accent); outline-offset: 3px; }
+.bi-ghandle { cursor: crosshair; }
+
+/* Graph view search filter (Obsidian-style) */
+.graph-search {
+  width: 190px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+.graph-search:focus { border-color: var(--accent); }
+.graph-search::placeholder { color: var(--text-dim); }
+#graphSvg .gnode.search-miss { opacity: 0.12; }
+#graphSvg .gnode.search-miss text { opacity: 0; }
+#graphSvg .gnode.search-hit circle.body { stroke: var(--accent); stroke-width: 2.4; fill: var(--accent-soft); }
+.graph-menu {
+  position: fixed; z-index: 400;
+  min-width: 190px;
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+  animation: riseIn 0.12s ease both;
+}
+.graph-menu button {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 13px;
+  background: none; border: none;
+  color: var(--text-dim); font-size: 12.5px; cursor: pointer;
+}
+.graph-menu button:hover { background: var(--surface-2); color: var(--text); }
+.graph-menu button.danger { color: var(--danger); }
+.graph-menu button.danger:hover { background: rgba(255, 101, 117, 0.14); }
+
+/* ============================================================
+   Home dashboard widgets
+   ============================================================ */
+
+.widgets {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  margin: 26px 0 4px;
+}
+.widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  animation: riseIn 0.3s ease both;
+}
+.widgets .widget:nth-child(2) { animation-delay: 0.06s; }
+.widgets .widget:nth-child(3) { animation-delay: 0.12s; }
+.widgets .widget:nth-child(4) { animation-delay: 0.18s; }
+
+/* Calendar widget */
+.w-calendar { flex: 0 0 auto; min-width: 210px; }
+.cal-nav { display: inline-flex; gap: 4px; }
+.cal-nav button {
+  width: 20px; height: 20px;
+  border: none; border-radius: 6px;
+  background: none; color: var(--text-dim); cursor: pointer;
+}
+.cal-nav button:hover { background: var(--surface-2); color: var(--text); }
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  font-size: 10.5px;
+}
+.cal-grid .cal-dow { color: var(--text-faint); text-align: center; font-weight: 700; padding: 2px 0; }
+.cal-grid .cal-day {
+  text-align: center; padding: 4px 0;
+  border-radius: 7px; color: var(--text-dim);
+}
+.cal-grid .cal-day.other { opacity: 0.28; }
+.cal-grid .cal-day.today {
+  background: var(--accent); color: var(--on-accent); font-weight: 800;
+}
+
+/* Weather widget */
+.w-weather { flex: 2 1 300px; min-width: 260px; }
+.w-weather .weather-body {
+  display: block; min-height: 0;
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+.wx-top { display: flex; align-items: center; gap: 16px; }
+.wx-icon { font-size: 46px; line-height: 1; filter: drop-shadow(0 4px 10px rgba(0,0,0,.3)); animation: floaty 4s ease-in-out infinite; }
+@keyframes floaty { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+.wx-temp-big { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.wx-deg { font-size: 26px; vertical-align: top; opacity: 0.7; }
+.wx-desc { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+.wx-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px; margin-top: 10px;
+}
+.wx-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 6px 9px;
+  font-size: 11.5px; color: var(--text-dim);
+  display: flex; justify-content: space-between; gap: 8px;
+}
+.wx-k { color: var(--text-faint); font-size: 10.5px; align-self: center; }
+.wx-h {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 9px;
+  font-size: 10px; color: var(--text-dim);
+  transition: transform var(--speed), background var(--speed);
+}
+:root[data-theme="light"] .wx-h { background: rgba(255,255,255,0.55); }
+.wx-h:hover { transform: translateY(-2px); background: var(--surface-2); }
+.wx-h-i { font-size: 16px; line-height: 1; }
+.wx-h-v { font-weight: 700; color: var(--text); }
+
+/* Button press micro-interaction */
+button:active:not(:disabled), .tile:active, .ws-pill:active { transform: scale(0.97) translateY(1px); }
+.w-clock { flex: 0 0 auto; min-width: 150px; text-align: center; }
+.w-clock-time {
+  font-size: 30px; font-weight: 800; letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+  color: var(--text);
+}
+.w-clock-date { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
+.w-tasks { flex: 1; min-width: 220px; }
+.w-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.w-head button {
+  width: 20px; height: 20px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: none; color: var(--text-dim);
+  cursor: pointer; font-size: 12px; line-height: 1;
+}
+.w-head button:hover { color: var(--text); border-color: var(--border-strong); }
+#taskList { list-style: none; margin: 0; padding: 0; max-height: 120px; overflow-y: auto; }
+#taskList li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0; font-size: 12.5px; color: var(--text-dim);
+}
+#taskList li.done .t-text { text-decoration: line-through; opacity: 0.5; }
+#taskList input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+#taskList .t-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#taskList .t-x, ul.bi-tasks .t-x { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 12px; }
+#taskList .t-x:hover { color: var(--danger); }
+.t-due { font-size: 10px; color: var(--text-faint); white-space: nowrap; margin-left: auto; }
+
+/* ============================================================
+   Board layer — free-floating blocks over the notes graph
+   ============================================================ */
+
+#boardLayer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+#boardWorld { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+.board-item {
+  position: absolute;
+  pointer-events: auto;
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+  min-width: 140px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.board-item .bi-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px;
+  background: var(--surface-2);
+  cursor: grab;
+  font-size: 10.5px; color: var(--text-faint);
+  user-select: none;
+}
+.board-item .bi-head::before { content: "⠿"; letter-spacing: -1px; }
+.board-item .bi-x {
+  margin-left: auto;
+  background: none; border: none; color: var(--text-faint);
+  cursor: pointer; font-size: 12px; line-height: 1; padding: 0 2px;
+}
+.board-item .bi-x:hover { color: var(--danger); }
+.board-item .bi-body { padding: 10px 12px; font-size: 12.5px; color: var(--text); }
+.bi-text-body {
+  min-height: 40px; outline: none; white-space: pre-wrap; word-break: break-word;
+}
+.bi-text-body:focus { box-shadow: inset 0 0 0 1px var(--accent); border-radius: 6px; }
+.board-item img.bi-img { display: block; width: 100%; height: auto; max-height: 320px; object-fit: cover; }
+.bi-clock-time {
+  font-family: var(--font-mono); font-size: 26px; font-weight: 800;
+  text-align: center; letter-spacing: -0.02em;
+}
+.bi-clock-date { text-align: center; font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+.board-item ul.bi-tasks { list-style: none; margin: 0; padding: 0; max-width: 240px; }
+.board-item ul.bi-tasks li { display: flex; gap: 7px; align-items: center; padding: 3px 0; font-size: 12px; color: var(--text-dim); }
+.board-item ul.bi-tasks input { accent-color: var(--accent); }
+.bi-resize {
+  position: absolute; right: 0; bottom: 0;
+  width: 20px; height: 20px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 45%, var(--accent) 45%, var(--accent) 55%, transparent 55%),
+              linear-gradient(135deg, transparent 60%, var(--border-strong) 60%);
+  border-radius: 0 0 10px 0;
+  z-index: 6;
+}
+.bi-resize-h {
+  position: absolute; left: 25%; right: 25%; bottom: 0;
+  height: 12px;
+  cursor: ns-resize;
+  border-radius: 6px;
+  background: linear-gradient(transparent 40%, var(--border-strong) 40%, var(--border-strong) 60%, transparent 60%);
+  opacity: 0; transition: opacity 0.15s;
+  z-index: 6;
+}
+.board-item:hover .bi-resize-h { opacity: 1; }
+.bi-ghandle {
+  color: var(--accent); font-size: 10px; cursor: crosshair;
+  opacity: 0.75;
+}
+.board-item .bi-head:hover .bi-ghandle { opacity: 1; text-shadow: 0 0 6px var(--accent); }
+body.no-ws-count .ws-count { display: none; }
+
+/* Тосты складываются В СТЕК снизу вверх, а не друг на друга */
+#toastStack {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; z-index: 1200; pointer-events: none;
+}
+.toast {
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 12.5px; color: var(--text);
+  box-shadow: var(--shadow-2);
+  animation: riseIn 0.2s ease both;
+  max-width: min(520px, 80vw);
+}
+.toast.ok  { border-color: color-mix(in srgb, #58d68d 60%, transparent); }
+.toast.err { border-color: rgba(255, 101, 117, 0.65); }
+.toast.hide { opacity: 0; transform: translateY(8px); transition: opacity .18s ease, transform .18s ease; }
+
+/* ============================================================
+   Tabs on top mode
+   ============================================================ */
+
+.top-tabstrip {
+  display: none;
+  align-items: center; gap: 8px;
+  height: 40px; padding: 4px 10px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+}
+body.tabbar-top .sidebar { display: none; }
+body.tabbar-top .top-tabstrip { display: flex; }
+.tab-list-h {
+  flex: 1; min-width: 0;
+  display: flex; gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-list-h::-webkit-scrollbar { display: none; }
+.tab-list-h .tab-pill { flex-shrink: 0; max-width: 200px; }
+
+/* Hide sidebar bottom tools */
+body.hide-tools .side-tools { display: none; }
+
+/* ============================================================
+   Passwords page (Comet-style)
+   ============================================================ */
+
+.vault-page.active {
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+}
+.pw-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+/* Made by MrDuck */
+.pw-gate {
+  margin: auto;
+  text-align: center;
+  padding: 40px 30px;
+  max-width: 460px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+.pw-lock-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  display: grid; place-items: center;
+  font-size: 30px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+}
+.pw-gate-title { font-size: 17px; font-weight: 700; margin: 0 0 8px; }
+.pw-gate input {
+  width: 100%; max-width: 340px; margin: 0 auto; display: block;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text); padding: 10px 13px;
+}
+.pw-gate input:focus { outline: none; border-color: var(--accent); }
+
+.pw-toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+.pw-toolbar input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text); padding: 9px 12px;
+}
+.pw-toolbar input:focus { outline: none; border-color: var(--accent); }
+.pw-gen-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-soft);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 9px 13px;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.pw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+}
+.pw-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  transition: border-color var(--speed), transform var(--speed);
+}
+.pw-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.pw-card .pc-title {
+  font-weight: 700; font-size: 13.5px; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 3px;
+}
+.pw-card .pc-fav {
+  width: 24px; height: 24px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 7px;
+  background: var(--accent-soft, rgba(128,128,128,.16));
+  color: var(--text-dim);
+  font-size: 11px; font-weight: 800;
+}
+.pw-card .pc-user { font-size: 11.5px; color: var(--text-dim); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pw-card .pc-url { font-size: 10.5px; color: var(--link); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.pw-card .pc-btns { display: flex; gap: 5px; margin-top: 9px; }
+.pw-card .pc-btns button {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  font-size: 11px; padding: 4px 6px; cursor: pointer;
+}
+.pw-card .pc-btns button:hover { color: var(--text); border-color: var(--border-strong); }
+
+/* ============================================================
+   Custom modal dialogs (replace native alert/prompt/confirm)
+   ============================================================ */
+
+.dlg-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.dlg {
+  width: 360px; max-width: calc(100vw - 48px);
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  padding: 18px;
+  animation: riseIn 0.15s ease both;
+}
+.dlg-message { font-size: 13px; color: var(--text); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.dlg-input {
+  width: 100%; margin-top: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text); padding: 9px 11px; font-family: inherit; font-size: 12.5px;
+}
+.dlg-input:focus { outline: none; border-color: var(--accent); }
+.dlg-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+
+/* graph settings popover */
+.graph-menu.gpop { min-width: 240px; padding: 10px 12px; }
+.graph-menu .gcfg {
+  display: flex; gap: 9px; align-items: center;
+  font-size: 12px; color: var(--text);
+  padding: 6px 2px; user-select: none; cursor: pointer;
+}
+.graph-menu .gcfg:hover { color: var(--accent); }
+.graph-menu .gcfg input { accent-color: var(--accent); }
+.graph-menu .gcfg-sep { height: 1px; background: var(--border); margin: 6px 0; }
+.graph-menu .gcfg-select {
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
+  cursor: default; padding-top: 8px;
+}
+.graph-menu .gcfg-select select {
+  width: 100%; padding: 5px 8px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  font-size: 12px; cursor: pointer;
+}
+.graph-menu .gcfg-select select:hover { border-color: var(--border-strong); }
+/* ============================================================
+   MOTION PACK — единые анимации интерфейса (transform/opacity,
+   ничего не влияет на layout). В конце файла = приоритет.
+   ============================================================ */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes apb-fade    { from { opacity: 0; } }
+@keyframes apb-fade-up { from { opacity: 0; transform: translateY(12px); } }
+@keyframes apb-pop     { from { opacity: 0; transform: scale(0.95) translateY(-4px); } }
+
+/* --- ховер: лёгкий подъём; клик: вдавливание --- */
+.nav-btn, .icon-btn, .ghost-btn, .recent-chip, .ws-pill, .tab-pill, .rail-item {
+  transition: background var(--speed), border-color var(--speed),
+              color var(--speed), box-shadow var(--speed),
+              transform 0.18s var(--ease-out);
+}
+.nav-btn:hover:not(:disabled),
+.icon-btn:hover:not(.addr-btn),
+.ghost-btn:hover { transform: translateY(-1px); }
+.recent-chip:hover { transform: translateY(-2px); }
+.rail-item:hover .glyph { transform: translateX(1px) scale(1.12); }
+.rail-item .glyph { transition: transform 0.18s var(--ease-out); }
+
+.nav-btn:active:not(:disabled),
+.icon-btn:active,
+.ghost-btn:active { transform: scale(0.93); transition-duration: 0.06s; }
+.recent-chip:active { transform: scale(0.96); transition-duration: 0.06s; }
+.ws-pill:active { transform: scale(0.97); transition-duration: 0.06s; }
+.tab-pill-close { transition: transform 0.12s var(--ease-out), background var(--speed), color var(--speed); }
+.tab-pill-close:active { transform: scale(0.82); }
+
+/* --- всплывающие меню (контекстные, палитра-меню, ⚙ графа) --- */
+.graph-menu {
+  animation: apb-pop 0.16s var(--ease-bounce) backwards;
+  transform-origin: top left;
+}
+
+/* --- модальные диалоги (alert/prompt/confirm) --- */
+.dlg-overlay { animation: apb-fade 0.15s ease backwards; }
+.dlg-overlay .dlg {
+  animation: apb-pop 0.22s var(--ease-bounce) backwards;
+  transform-origin: center;
+}
+
+/* --- полноэкранный просмотр картинок --- */
+#apbLightbox { animation: apb-fade 0.16s ease backwards; }
+#apbLightbox img { animation: apb-pop 0.24s var(--ease-bounce) backwards; }
+
+/* --- палитра Ctrl+K и боковые панели --- */
+#paletteOverlay { animation: apb-fade 0.14s ease backwards; }
+.panel.active { animation-duration: 0.22s; animation-timing-function: var(--ease-out); }
+
+/* --- домашний экран: виджеты и недавние сайты въезжают каскадом --- */
+#widgetsRow .widget { animation: apb-fade-up 0.36s var(--ease-out) backwards; }
+#widgetsRow .widget:nth-child(1) { animation-delay: 0ms; }
+#widgetsRow .widget:nth-child(2) { animation-delay: 50ms; }
+#widgetsRow .widget:nth-child(3) { animation-delay: 100ms; }
+#widgetsRow .widget:nth-child(4) { animation-delay: 150ms; }
+#recentTiles .recent-chip { animation: apb-fade-up 0.3s var(--ease-out) backwards; }
+#recentTiles .recent-chip:nth-child(1) { animation-delay: 60ms; }
+#recentTiles .recent-chip:nth-child(2) { animation-delay: 110ms; }
+#recentTiles .recent-chip:nth-child(3) { animation-delay: 160ms; }
+#recentTiles .recent-chip:nth-child(4) { animation-delay: 210ms; }
+#recentTiles .recent-chip:nth-child(5) { animation-delay: 260ms; }
+#recentTiles .recent-chip:nth-child(6) { animation-delay: 310ms; }
+
+/* --- доступность: есл�� система просит меньше анимаций — отключаем --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   OMNIBOX SUGGESTIONS — выпадашка истории под адресной строкой
+   ============================================================ */
+#addressForm { position: relative; }
+.omni-suggest {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  z-index: 900;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.omni-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.omni-item:hover, .omni-item.sel { background: var(--surface-2); }
+.omni-ic { opacity: 0.7; font-size: 12px; flex-shrink: 0; }
+.omni-t {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12.5px; color: var(--text);
+}
+.omni-u {
+  font-size: 11px; color: var(--text-faint);
+  max-width: 40%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Кнопка сплита в тулбаре */
+#splitBtn { font-size: 13px; line-height: 1; }
+
+/* LaTeX в превью заметок */
+.md-preview .math {
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  white-space: nowrap;
+}
+.md-preview .math-block {
+  display: block;
+  text-align: center;
+  margin: 10px 0;
+  padding: 6px 0;
+  overflow-x: auto;
+}
+.md-preview .math .up { font-style: normal; }
+.md-preview .math .frac {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: -0.5em;
+  text-align: center;
+  margin: 0 2px;
+  line-height: 1.15;
+}
+.md-preview .math .frac .num { border-bottom: 1px solid currentColor; padding: 0 4px; }
+.md-preview .math .frac .den { padding: 0 4px; }
+.md-preview .math .ovl { text-decoration: overline; }
+
+/* Папки заметок в сайд-панели */
+details.note-folder > summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 5px 8px;
+  border-radius: 8px;
+  user-select: none;
+}
+details.note-folder > summary:hover { background: var(--surface-2); color: var(--text); }
+details.note-folder[open] > summary { margin-bottom: 3px; }
+ul.note-sub { display: flex; flex-direction: column; gap: 1px; padding-left: 6px; }
+
+/* ============================================================
+   GRAPH HELP — панель «что можно делать в графе»
+   ============================================================ */
+#etabGraph { position: relative; }
+.graph-help {
+  position: absolute;
+  top: 44px; right: 10px; bottom: 10px;
+  width: min(560px, calc(100% - 20px));
+  overflow-y: auto;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-2);
+  padding: 14px 16px 16px;
+  z-index: 40;
+  animation: apb-fade-up 0.22s var(--ease-out, ease) backwards;
+}
+.gh-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.gh-head > span { font-weight: 800; font-size: 14px; color: var(--text); }
+.gh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 20px;
+}
+.gh-group h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.gh-group ul {
+  margin: 0; padding-left: 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12px; line-height: 1.45;
+  color: var(--text-dim);
+}
+.gh-group b { color: var(--text); font-weight: 700; }
+
+/* Шпаргалка markdown/LaTeX в редакторе заметок (та же сетка gh-*) */
+#editorPane { position: relative; }
+#mdToolbar { position: relative; }
+#mdHelp {
+  position: absolute;
+  top: 38px; left: 10px;
+  width: min(520px, calc(100% - 20px));
+  max-height: calc(100% - 60px);
+  overflow-y: auto;
+  z-index: 40;
+}
+.md-toolbar button#mdHelpBtn {
+  margin-left: auto;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ============================================================
+   SIDEBAR COLLAPSE v2
+   Свёрнутый рельс = только иконки (фавиконы вкладок, буквы
+   воркспейсов, глифы инструментов) + имя APB. Развёрнутый =
+   полное имя AP Browser. Правила идут ПОСЛЕ базовых body.collapsed,
+   чтобы переопределить обнуление .brand-name.
+   ============================================================ */
+
+/* Полное имя видно только в развёрнутом состоянии; в свёрнутом — APB.
+   (переопределяет generic-правило opacity:0/width:0 для .brand-name) */
+body.collapsed .sidebar:not(.peek) .brand-name { opacity: 1; width: auto; }
+.brand-name .bn-short { display: none; }
+body.collapsed .sidebar:not(.peek) .brand-name .bn-full { display: none; }
+body.collapsed .sidebar:not(.peek) .brand-name .bn-short { display: inline; }
+
+/* Шапка свёрнутого рельса: APB сверху, кнопка-стрелка под ним.
+   Квадрат-лого скрываем — иначе «APB» не влезает в 54px ширины. */
+body.collapsed .sidebar:not(.peek) .side-head {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 2px 8px;
+}
+body.collapsed .sidebar:not(.peek) .brand-mark { display: none; }
+body.collapsed .sidebar:not(.peek) .brand-name { font-size: 12px; }
+
+/* Вкладки в рельсе: фавикон по центру пилюли */
+body.collapsed .sidebar:not(.peek) .tab-pill {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Воркспейсы: буква вместо названия (span/.ws-x уже скрыты выше) */
+body.collapsed .sidebar:not(.peek) .ws-pill { justify-content: center; padding: 6px 9px; }
+body.collapsed .sidebar:not(.peek) .ws-pill::before {
+  content: attr(data-letter);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ФИКС «съехавших иконок»: внутренний контейнер должен сжиматься вместе
+   с рельсом, иначе всё центрированное остаётся на x≈116px и обрезается
+   границей 54px. Сжимаем inner — центровка начинает работать. */
+body.collapsed .sidebar:not(.peek) .sidebar-inner { width: 54px; }
+
+/* Строка воркспейсов в узком рельсе: пилюли-квадратики в столбик/сеткой,
+   кнопка «+» под ними */
+body.collapsed .sidebar:not(.peek) .ws-strip {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 0 5px 8px;
+}
+body.collapsed .sidebar:not(.peek) .ws-pills {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Наведение-peek включается только настройкой (body.side-hover);
+   по умолчанию панель открывается ТОЛЬКО кнопкой. */
+
+/* ЦЕНТРИРОВКА: невидимые подписи (opacity:0/width:0) остаются flex-боксами
+   и их gap сдвигал иконку влево — прячем display:none и гасим gap.
+   Скроллбар списка вкладок тоже съедает ширину справа — скрываем. */
+body.collapsed .sidebar:not(.peek) :is(.new-tab-btn .lbl, .rail-item .lbl) { display: none; }
+body.collapsed .sidebar:not(.peek) :is(.new-tab-btn, .rail-item) { gap: 0; }
+body.collapsed .sidebar:not(.peek) .tab-list { scrollbar-width: none; }
+body.collapsed .sidebar:not(.peek) .tab-list::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+   UI TOUR — мини-панели подсказок возле элементов (как в играх).
+   Экран затемняется СПОтЛАЙТОМ: 4 шторы вокруг цели. Вне выделенной
+   зоны шторы БЛОКИРУЮТ клики — взаимодействовать можно только с целью,
+   панелью подсказки и тем, что внутри «дырки».
+   ============================================================ */
+#tourDim {
+  position: fixed; inset: 0; z-index: 999994;
+  pointer-events: none;              /* контейнер пропускает, шторы — нет */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#tourDim.show { opacity: 1; }
+.td-shade {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;              /* именно шторы глушат клики */
+  transition: top 0.38s cubic-bezier(0.33, 1, 0.68, 1),
+              left 0.38s cubic-bezier(0.33, 1, 0.68, 1),
+              width 0.38s cubic-bezier(0.33, 1, 0.68, 1),
+              height 0.38s cubic-bezier(0.33, 1, 0.68, 1);
+}
+/* Невидимый мост над кнопками окна: визуально они под затемнением,
+   но клики пробрасываются на настоящие кнопки */
+#tourWcGhost {
+  position: fixed; z-index: 999995;
+  background: transparent;
+}
+
+#tourHl {
+  position: fixed; z-index: 999996;
+  pointer-events: none;
+  border-radius: 10px;
+  border: 2px solid var(--accent);
+  animation: tourRingIn 0.25s var(--ease-out, ease) backwards,
+             tourPulse 1.7s ease-in-out 0.3s infinite;
+}
+@keyframes tourRingIn {
+  from { opacity: 0; transform: scale(1.05); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes tourPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent); }
+  50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+
+#tourPop {
+  position: fixed; z-index: 999997;
+  width: 372px; max-width: calc(100vw - 24px);
+  /* НЕКЛИК-ПРОЗРАЧНОСТЬ: --surface полупрозрачный (стекло) — под подсказкой
+     текст просвечивал сквозь панель. Берём плотный фон. */
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 12px 14px 12px;
+  box-shadow: var(--shadow-2);
+}
+/* Контент панели — отдельным узлом, чтобы анимация переигрывалась
+   на каждом шаге (innerHTML пересоздаёт .tp-in) */
+#tourPop .tp-in {
+  animation: tourCardIn 0.26s cubic-bezier(0.2, 0.9, 0.25, 1.18) backwards;
+}
+@keyframes tourCardIn {
+  from { opacity: 0; transform: translateY(7px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Центральные карточки (интро/финал): крупнее, ровно по центру экрана */
+#tourPop.tp-center {
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 460px; max-width: calc(100vw - 32px);
+  padding: 20px 22px 16px;
+  text-align: center;
+}
+#tourPop.tp-center .tp-head { flex-direction: row-reverse; }
+#tourPop.tp-center h3 { font-size: 18px; margin: 6px 0 10px; }
+#tourPop.tp-center p { font-size: 13px; line-height: 1.65; margin-bottom: 14px; }
+#tourPop.tp-center .tp-foot { justify-content: center; gap: 8px; }
+#tourPop h3 { margin: 4px 0 5px; font-size: 14px; font-weight: 700; color: var(--text); }
+#tourPop p { margin: 0 0 11px; font-size: 12.5px; line-height: 1.55; color: var(--text-dim); }
+.tp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tp-step {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.05em;
+  color: var(--accent);
+}
+.tp-x {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint); font-size: 16px; line-height: 1;
+  padding: 2px 7px; border-radius: 6px;
+}
+.tp-x:hover { background: var(--surface-2); color: var(--text); }
+.tp-foot { display: flex; align-items: stretch; gap: 6px; }
+/* «Пропустить всё» и «Назад» — строго одинаковые; «Далее» чуть длиннее */
+#tourPop .tp-skip,
+#tourPop .tp-back {
+  flex: 0 1 auto;
+  width: 104px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+#tourPop .tp-next {
+  flex: 0 1 auto;
+  width: 122px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Made by MrDuck */
+/* ================= INTERNAL SETTINGS: search + privacy lists ================= */
+/* Made by MrDuck */
+.isec-nav .isec-search-wrap {
+  margin-top: auto;
+  position: relative;
+  width: 100%;
+}
+.isec-nav .isec-search-icon {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  width: 13px; height: 13px; color: var(--text-faint); pointer-events: none;
+}
+.isec-nav .isec-search {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 7px 9px 7px 28px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.isec-nav .isec-search::placeholder { color: var(--text-faint); }
+.isec-nav .isec-search:focus { outline: none; border-color: var(--accent); }
+
+#auditList li {
+  justify-content: flex-start;
+  align-items: flex-start;
+  cursor: default;
+  gap: 8px;
+}
+#auditList li > div { min-width: 0; }
+#auditList li .title { font-size: 12.5px; color: var(--text); line-height: 1.45; }
+#auditList li .meta { font-size: 11.5px; }
+
+#blockedSites li,
+#fpDash li { justify-content: flex-start; cursor: default; text-align: left; }
+#blockedSites li .meta { display: flex; align-items: center; gap: 6px; }
+
+/* ===== SETTINGS PAGES: unify bare buttons & stray inputs (2026-08-25) ===== */
+/* Made by MrDuck */
+.internal-page > button,
+.row > button {
+  background: var(--accent); border: none; border-radius: var(--r-sm);
+  color: var(--on-accent); font-weight: 600; padding: 8px 14px;
+  cursor: pointer; font-family: inherit; font-size: inherit;
+  transition: filter var(--speed), transform var(--speed);
+}
+.internal-page > button:hover, .row > button:hover { filter: brightness(1.12); }
+.internal-page > button { margin: 4px 0 16px; }
+.internal-page > button:active, .row > button:active { transform: scale(0.97); }
+
+.internal-page input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]) {
+  width: 100%;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); color: var(--text); padding: 8px 10px;
+  transition: border-color var(--speed);
+}
+.internal-page input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus {
+  outline: none; border-color: var(--accent);
+}
+
+/* Audit/stats text blocks: keep titles readable inside flex rows */
+#auditList li .title { font-weight: 600; }
+
+/* --------------------------------------------------------------------- */
+/* SHIELD BADGE — индикатор максимального уровня приватности в тулбаре   */
+/* --------------------------------------------------------------------- */
+.shield-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 11px; margin-left: 6px;
+  border-radius: 999px; border: 1px solid transparent;
+  background: transparent; color: var(--text);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+  white-space: nowrap; cursor: pointer; flex: 0 0 auto;
+}
+.shield-badge.max {
+  border-color: rgba(177, 140, 255, .55);
+  background: rgba(177, 140, 255, .16);
+  color: #e6dbff;
+  box-shadow: 0 0 12px rgba(177, 140, 255, .22);
+}
+.shield-badge.emergency {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+  animation: shieldPulse 1.6s ease-in-out infinite;
+}
+@keyframes shieldPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 101, 117, .38); }
+  50%      { box-shadow: 0 0 0 7px rgba(255, 101, 117, 0); }
+}
+.shield-badge:hover { transform: translateY(-1px); }
+.shield-badge:active { transform: scale(.94); }
+@media (prefers-reduced-motion: reduce) {
+  .shield-badge.emergency { animation: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Границы окна: тонкая видимая рамка вокруг приложения (окно без
+   декораций иначе сливается с краями экрана) + мини-прослойка между
+   развёрнутым окном и краями экрана. Класс .is-maximized ставит
+   boot-core.js по событию изменения размера окна. */
+html { box-sizing: border-box; border: 1px solid var(--border-strong); }
+html.is-maximized body {
+  padding: 1px;
+  box-sizing: border-box;
+  background: var(--bg-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.is-maximized body { transition: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Невидимые полоски ресайза за края окна. tao для frameless-окна ловит
+   ресайз только за верхний край (маркер тени), поэтому бока и низ тянутся
+   этими оверлеями (создаются в boot-core.js) с вызовом
+   startResizeDragging() напрямую. Максимизированное окно не ресайзится. */
+#winResize { position: fixed; inset: 0; pointer-events: none; z-index: 999998; }
+#winResize .rs { position: absolute; pointer-events: auto; }
+#winResize .rs[data-dir="top"]        { top: 0; left: 8px; right: 8px; height: 5px; cursor: n-resize; }
+#winResize .rs[data-dir="bottom"]     { bottom: 0; left: 8px; right: 8px; height: 5px; cursor: s-resize; }
+#winResize .rs[data-dir="left"]       { left: 0; top: 8px; bottom: 8px; width: 5px; cursor: w-resize; }
+#winResize .rs[data-dir="right"]      { right: 0; top: 8px; bottom: 8px; width: 5px; cursor: e-resize; }
+#winResize .rs[data-dir="top-left"]   { top: 0; left: 0; width: 10px; height: 10px; cursor: nw-resize; }
+#winResize .rs[data-dir="top-right"]  { top: 0; right: 0; width: 10px; height: 10px; cursor: ne-resize; }
+#winResize .rs[data-dir="bottom-left"]  { bottom: 0; left: 0; width: 10px; height: 10px; cursor: sw-resize; }
+#winResize .rs[data-dir="bottom-right"] { bottom: 0; right: 0; width: 10px; height: 10px; cursor: se-resize; }
+html.is-maximized #winResize .rs { pointer-events: none; }
+
+/* ============================================================
+   MOTION PACK v2 — «дорогой» моушен по всему интерфейсу.
+   Всё чисто transform/opacity (layout не дёргается), гасится
+   глобально через .no-motion и prefers-reduced-motion.
+   В конце файла = высший приоритет при равной специфичности.
+   ============================================================ */
+
+:root {
+  --ease-swift: cubic-bezier(0.32, 0.72, 0, 1);   /* ящик с «доездом», панель/страницы */
+  --ease-springy: cubic-bezier(0.3, 1.4, 0.5, 1); /* лёгкий отскок, кнопки/чекбоксы */
+}
+
+@keyframes apb-sheen { to { transform: translateX(320%) skewX(-18deg); } }
+@keyframes apb-page-in { from { opacity: 0; transform: translateY(14px) scale(0.996); } }
+@keyframes apb-toast-in { from { opacity: 0; transform: translateY(18px) scale(0.9); } }
+@keyframes apb-tab-leave { to { opacity: 0; transform: translateX(28px) scale(0.88); } }
+@keyframes apb-bar-grow { from { transform: scaleY(0); } }
+@keyframes apb-chip-pulse { 50% { opacity: 0.55; } }
+@keyframes apb-greet { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+
+/* --- Акцентные кнопки: подъём, свечение и БЛЕСК-дорожка при ховере --- */
+.primary-btn, .new-tab-btn, .theme-buttons button.ready, .home-search button {
+  position: relative;
+  overflow: hidden;
+}
+/* Кнопка «перейти» остаётся position:absolute (базовое правило) —
+   для блеска ей нужен только overflow */
+.address-form button:not(.addr-btn) { overflow: hidden; }
+.primary-btn, .new-tab-btn, .theme-buttons button.ready, .home-search button {
+  transition: filter var(--speed), transform 0.18s var(--ease-out), box-shadow 0.25s ease;
+}
+.primary-btn::after, .new-tab-btn::after, .theme-buttons button.ready::after,
+.home-search button::after, .address-form button:not(.addr-btn)::after {
+  content: "";
+  position: absolute; top: -20%; bottom: -20%; left: 0;
+  width: 40%;
+  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.32) 50%, transparent 80%);
+  transform: translateX(-160%) skewX(-18deg);
+  pointer-events: none;
+}
+.primary-btn:hover, .new-tab-btn:hover, .theme-buttons button.ready:hover, .home-search button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.primary-btn:hover::after, .new-tab-btn:hover::after, .theme-buttons button.ready:hover::after,
+.home-search button:hover::after, .address-form button:not(.addr-btn):hover::after {
+  animation: apb-sheen 0.55s ease;
+}
+.primary-btn:active, .new-tab-btn:active, .home-search button:active,
+.theme-buttons button:active { transform: translateY(0) scale(0.97); transition-duration: 0.05s; }
+.address-form button:active { transform: scale(0.9); }
+
+/* --- Микро-масштаб иконок в круглых кнопках --- */
+.nav-btn svg.ic, .icon-btn svg.ic, .address-form button svg.ic {
+  transition: transform 0.22s var(--ease-springy);
+}
+.nav-btn:hover:not(:disabled) svg.ic, .icon-btn:hover svg.ic { transform: scale(1.16); }
+
+/* --- Кнопки окна: закрытие краснеет как положено --- */
+.win-controls button { transition: background var(--speed), color var(--speed), transform 0.12s; }
+.win-controls button:active { transform: scale(0.9); }
+#winClose:hover { background: #e81123; color: #fff; }
+
+/* --- Омнибокс и поиск на главной: НОЛЬ выделений при фокусе ---
+   Никаких колец, свечений, рамок и подсветки выделенного текста. */
+.home-search { transition: border-color var(--speed); }
+.home-search input:focus,
+.home-search input:focus-visible,
+.address-form input:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--border);
+  -webkit-tap-highlight-color: transparent;
+}
+.home-search input::selection,
+.address-form input::selection { background: transparent; }
+.home-search input { caret-color: var(--text-dim); }
+
+/* --- Подсказки омнибокса: поп листа + лёгкий каскад пунктов --- */
+.omni-suggest { animation: apb-pop 0.18s var(--ease-bounce) backwards; transform-origin: top center; }
+.omni-item {
+  transition: background 0.12s ease, color 0.12s ease, transform 0.15s var(--ease-out), box-shadow 0.15s;
+  animation: apb-fade 0.14s ease-out backwards;
+}
+.omni-item:nth-child(1) { animation-delay: 0ms; }
+.omni-item:nth-child(2) { animation-delay: 22ms; }
+.omni-item:nth-child(3) { animation-delay: 44ms; }
+.omni-item:nth-child(4) { animation-delay: 66ms; }
+.omni-item:nth-child(5) { animation-delay: 88ms; }
+.omni-item:nth-child(6) { animation-delay: 110ms; }
+.omni-item:nth-child(7) { animation-delay: 132ms; }
+.omni-item:hover, .omni-item.sel {
+  transform: translateX(3px);
+  box-shadow: inset 2px 0 0 var(--accent);
+  color: var(--text);
+}
+
+/* --- Внутренние страницы: мягкий въезд + каскад верхних блоков --- */
+.panel.ip-anim { animation: apb-page-in 0.28s var(--ease-swift) both; }
+.panel.ip-anim > * { animation: apb-fade-up 0.3s var(--ease-out) backwards; }
+.panel.ip-anim > *:nth-child(1) { animation-delay: 0.04s; }
+.panel.ip-anim > *:nth-child(2) { animation-delay: 0.07s; }
+.panel.ip-anim > *:nth-child(3) { animation-delay: 0.1s; }
+.panel.ip-anim > *:nth-child(4) { animation-delay: 0.13s; }
+.panel.ip-anim > *:nth-child(5) { animation-delay: 0.16s; }
+.panel.ip-anim > *:nth-child(6) { animation-delay: 0.19s; }
+.panel.ip-anim > *:nth-child(7) { animation-delay: 0.22s; }
+.panel.ip-anim > *:nth-child(8) { animation-delay: 0.25s; }
+.panel.ip-anim > *:nth-child(n+9) { animation-delay: 0.28s; }
+/* Строки списков/карточки: быстрое проявление, каскадом до 12, дальше без --- */
+.panel.ip-anim :is(.hist-list li, .pw-card) { animation: apb-fade-up 0.24s var(--ease-out) backwards; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(1) { animation-delay: 0.1s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(2) { animation-delay: 0.14s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(3) { animation-delay: 0.18s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(4) { animation-delay: 0.22s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(5) { animation-delay: 0.26s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(6) { animation-delay: 0.3s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(7) { animation-delay: 0.34s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(8) { animation-delay: 0.38s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(9) { animation-delay: 0.42s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(10) { animation-delay: 0.46s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(11) { animation-delay: 0.5s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(12) { animation-delay: 0.54s; }
+.panel.ip-anim :is(.hist-list li, .pw-card):nth-child(n+13) { animation-delay: 0.58s; }
+/* Побочные списки (панели сбоку): короткое проявление без движения --- */
+.list li { animation: apb-fade 0.12s ease-out backwards; }
+
+/* --- Навигация настроек: индикатор-полоска у активного пункта --- */
+.isec-link { position: relative; transition: background var(--speed), color var(--speed), transform 0.18s var(--ease-out); }
+.isec-link:hover { transform: translateX(2px); }
+.isec-link.active::before {
+  content: "";
+  position: absolute; left: 3px; top: 22%; bottom: 22%;
+  width: 3px; border-radius: 999px;
+  background: var(--accent);
+  animation: apb-bar-grow 0.24s var(--ease-out);
+  transform-origin: center;
+}
+
+/* --- Боковая панель: плавнее ход + контент въезжает следом --- */
+.side-panel {
+  transition: flex-basis 0.32s var(--ease-swift), width 0.32s var(--ease-swift),
+              border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.side-panel.open .side-panel-inner { animation: apb-fade-up 0.3s var(--ease-out) 0.06s backwards; }
+/* Во время ручного ресайза панелей анимации выключены — курсор не «резиновый» */
+body.resizing .side-panel { transition: none; }
+
+/* --- Вкладки: ховер-нычок и красивый уход при закрытии --- */
+.tab-pill:hover:not(.dragging) { transform: translateX(2px); }
+.tab-pill.tab-leave {
+  pointer-events: none;
+  animation: apb-tab-leave 0.17s var(--ease-swift, cubic-bezier(0.32, 0.72, 0, 1)) forwards;
+}
+
+/* --- Тайл-панель быстрого доступа: пружинистые карточки + каскад --- */
+.tile {
+  animation: apb-fade-up 0.32s var(--ease-out) backwards;
+  transition: transform 0.22s var(--ease-out), box-shadow 0.25s ease,
+              background var(--speed), border-color var(--speed);
+}
+.tile:hover {
+  transform: translateY(-4px) scale(1.03);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border-strong));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+.tile:active { transform: translateY(-1px) scale(0.98); transition-duration: 0.05s; }
+.tile-av { transition: transform 0.25s var(--ease-springy); }
+.tile:hover .tile-av { transform: translateY(-2px) scale(1.08) rotate(-4deg); }
+.tile-x { transform: scale(0.6); transition: opacity var(--speed), transform 0.2s var(--ease-springy); }
+.tile:hover .tile-x { opacity: 1; transform: scale(1); }
+.tile-add:hover { transform: none; }
+.tiles .tile:nth-child(1) { animation-delay: 20ms; }
+.tiles .tile:nth-child(2) { animation-delay: 50ms; }
+.tiles .tile:nth-child(3) { animation-delay: 80ms; }
+.tiles .tile:nth-child(4) { animation-delay: 110ms; }
+.tiles .tile:nth-child(5) { animation-delay: 140ms; }
+.tiles .tile:nth-child(6) { animation-delay: 170ms; }
+.tiles .tile:nth-child(7) { animation-delay: 200ms; }
+.tiles .tile:nth-child(8) { animation-delay: 230ms; }
+.tiles .tile:nth-child(9) { animation-delay: 260ms; }
+.tiles .tile:nth-child(n+10) { animation-delay: 290ms; }
+
+/* --- Приветствие на главной: переливающийся градиент по тексту --- */
+.home-greeting {
+  background: linear-gradient(100deg,
+    var(--text) 30%,
+    color-mix(in srgb, var(--accent) 60%, var(--text)) 50%,
+    var(--text) 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: apb-greet 7s ease-in-out infinite;
+}
+
+/* --- Тосты: пружинистый поп + свечение по типу --- */
+.toast { animation: apb-toast-in 0.34s var(--ease-springy) both; }
+.toast.ok  { box-shadow: var(--shadow-2), 0 0 22px rgba(88, 214, 141, 0.22); }
+.toast.err { box-shadow: var(--shadow-2), 0 0 22px rgba(255, 101, 117, 0.28); }
+
+/* --- Модальные диалоги: фон с блюром, карточка мягко «оседает» --- */
+.dlg-overlay { backdrop-filter: blur(4px); }
+.dlg { animation: apb-pop 0.24s var(--ease-springy) backwards; }
+
+/* --- Сейф: замок парит, содержимое проявляется при разблокировке --- */
+.pw-lock-icon { animation: floaty 3.6s ease-in-out infinite; }
+#vaultContentBox:not(.hidden) { animation: apb-fade-up 0.32s var(--ease-out) backwards; }
+.pw-card .pc-btns button {
+  transition: color var(--speed), border-color var(--speed), background var(--speed), transform 0.15s var(--ease-out);
+}
+.pw-card .pc-btns button:hover { transform: translateY(-1px); }
+
+/* --- Бегущие чипы: статусы дышат (opacity — композитор, не paint) --- */
+.dl-chip { transition: background 0.3s ease, color 0.3s ease, transform 0.25s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1)); }
+.dl-chip.st-active { animation: apb-chip-pulse 1.6s ease-in-out infinite; }
+.badge { transition: transform 0.15s var(--ease-out), border-color var(--speed), color var(--speed); }
+.badge:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); color: var(--text); }
+
+/* --- Ссылки: мягкая смена цвета --- */
+a { transition: color 0.15s ease; }
+
+/* --- Кастомные ЧЕКБОКСЫ: плитка с галочкой-пружиной --- */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  width: 15px; height: 15px;
+  margin: 0;
+  flex-shrink: 0;
+  vertical-align: -2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.1s ease;
+}
+input[type="checkbox"]::after {
+  content: "";
+  position: absolute; left: 4px; top: 1px;
+  width: 4px; height: 7px;
+  border: solid var(--on-accent, #fff);
+  border-width: 0 2px 2px 0;
+  transform: rotate(40deg) scale(0);
+  transform-origin: center;
+  transition: transform 0.16s var(--ease-springy);
+}
+input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+input[type="checkbox"]:checked::after { transform: rotate(40deg) scale(1); }
+input[type="checkbox"]:active { transform: scale(0.85); }
+input[type="checkbox"]:disabled { opacity: 0.4; cursor: default; }
+/* Контекстные размеры (перечислены заново — они раньше в файле) */
+.pz-row input[type="checkbox"], .checkbox-row input[type="checkbox"] { width: 16px; height: 16px; }
+.md-preview input[type="checkbox"], #taskList input[type="checkbox"],
+.board-item ul.bi-tasks input[type="checkbox"] { width: 14px; height: 14px; border-radius: 4px; }
+.md-preview input[type="checkbox"]::after, #taskList input[type="checkbox"]::after,
+.board-item ul.bi-tasks input[type="checkbox"]::after {
+  left: 3px; top: 0.5px; height: 6px; border-width: 0 1.5px 1.5px 0;
+}
+
+/* --- Слайдеры: заполненная дорожка (--fill ставит JS) + пружинистый бегунок --- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(var(--accent), var(--accent)) 0 / var(--fill, 50%) 100% no-repeat,
+              var(--surface-2);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s var(--ease-springy), box-shadow 0.2s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.18); }
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.32);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45), 0 0 0 6px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45), 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* --- Селекты: блик рамки при фокусе, лёгкий тычок при клике --- */
+select { cursor: pointer; transition: border-color var(--speed), box-shadow var(--speed), transform 0.12s ease; }
+select:active { transform: scale(0.98); }
+.internal-page select:focus, .row select:focus, .toolbar select:focus,
+.side-panel-inner > select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft, rgba(128, 128, 128, 0.18));
+}
+
+/* --- Поля ввода: свечение фокуса как у адресной строки --- */
+.internal-page input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
+.row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft, rgba(128, 128, 128, 0.18));
+}
+input[type="color"] {
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-springy), box-shadow 0.18s ease;
+}
+input[type="color"]:hover { transform: scale(1.12); box-shadow: 0 0 0 3px var(--accent-soft, rgba(128, 128, 128, 0.18)); }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+/* --- Скроллбары: тонкие, парящие, с акцентом при ховере --- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text) 20%, transparent);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* --- Бренд-марка лого чуть «оживает» под курсором --- */
+.brand-mark { transition: transform 0.3s var(--ease-springy); }
+.brand:hover .brand-mark { transform: rotate(-8deg) scale(1.1); }
+
+/* Загрузки: chip «отменено» (тост-карточки убраны — всё в списке) */
+.st-cancelled { background: rgba(160, 160, 170, 0.16); color: #a0a0aa; }
+
+/* Строка загрузки: имя; под ним [chip | прогресс-полоса | %] | кнопки при hover */
+#dlList li.dl-row { display: flex; align-items: center; gap: 8px; padding: 7px 8px; }
+#dlList li.dl-row .dl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+#dlList li.dl-row .dl-sub { display: flex; align-items: center; gap: 7px; min-width: 0; }
+#dlList li.dl-row .dl-meta-hint { font-size: 10px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dl-bar {
+  display: inline-block; flex: 0 1 110px; height: 4px; min-width: 36px;
+  border-radius: 999px; overflow: hidden; position: relative;
+  background: rgba(127, 176, 255, 0.12);
+}
+.dl-bar-fill {
+  /* Полоса — scaleX (GPU-композитор), НЕ width: width = layout при каждом
+     прогресс-эмите; на 200 Гц дисплейное обновление 5 мс — layout-мусор
+     рвёт кадры. transform-origin слева — растёт из левого края. */
+  display: block; height: 100%; border-radius: 999px; width: 100%;
+  transform: scaleX(0); transform-origin: 0 50%;
+  background: linear-gradient(90deg, #7fb0ff, #9fd0ff);
+  transition: transform 0.25s var(--ease-swift, cubic-bezier(0.32, 0.72, 0, 1));
+  will-change: transform;
+}
+.dl-bar-fill.anim {
+  transform: scaleX(1);
+  background: transparent; position: relative;
+}
+/* Шиммер недетерминированной закачки: «гусеница» едет translateX (GPU).
+   Прежний вариант крутил background-position — paint всего трека каждый
+   кадр в главном потоке, на высокой герцовке это видимые фризы. */
+.dl-bar-fill.anim::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0;
+  width: 45%; border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #7fb0ff 35%, #9fd0ff 50%, #7fb0ff 65%, transparent);
+  animation: apb-dl-run 1.15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  will-change: transform;
+}
+.dl-bar-fill.done { background: linear-gradient(90deg, #43c17a, #58d68d); transition: transform 0.35s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1)); }
+.dl-pct { font-size: 10px; font-weight: 700; color: var(--text-dim); font-family: var(--font-mono); flex-shrink: 0; }
+/* кнопки: скрыты, проявляются при наведении на строку */
+#dlList li.dl-row .dl-acts {
+  display: flex; gap: 3px; flex-shrink: 0;
+  opacity: 0; transform: translateX(6px);
+  transition: opacity 0.18s ease, transform 0.18s var(--ease-springy);
+  pointer-events: none;
+}
+#dlList li.dl-row:hover .dl-acts { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.dl-act {
+  background: none; border: 1px solid transparent; cursor: pointer;
+  width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; line-height: 1; color: var(--text-dim);
+  transition: color 0.15s ease, background 0.15s ease, transform 0.15s var(--ease-springy);
+}
+.dl-act:hover { transform: scale(1.08); }
+.dl-act.dl-cancel:hover { color: #ff6575; background: rgba(255, 101, 117, 0.12); }
+.dl-act.dl-retry:hover  { color: #7fb0ff; background: rgba(127, 176, 255, 0.12); }
+.dl-act:disabled { opacity: 0.35; cursor: default; }
+.dl-act:disabled:hover { transform: none; color: var(--text-dim); background: none; }
+
+/* keyframes строк загрузок (полоса-шиммер — translateX/GPU, въезд строки, вспышка) */
+@keyframes apb-dl-run   { from { transform: translateX(-250%); } to { transform: translateX(240%); } }
+@keyframes apb-dl-row-in { from { opacity: 0; transform: translateX(-14px); } }
+@keyframes apb-dl-flash { 0% { background: rgba(127, 176, 255, 0.20); } to { background: transparent; } }
+
+/* Новая строка в списке Загрузок — въезд слева + вспышка-подсветка */
+#dlList li.dl-new {
+  animation: apb-dl-row-in 0.4s var(--ease-springy) both, apb-dl-flash 1.8s ease-out both;
+  border-radius: var(--r-sm);
+}
+
+/* Строка загрузки: вторая линия — домен + мини-график скорости */
+#dlList li.dl-row .dl-sub2 { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; min-height: 22px; }
+#dlList li.dl-row .dl-speed {
+  flex-shrink: 0; margin-left: 6px;
+  font-size: 10px; font-weight: 700; color: #7fb0ff;
+  font-family: var(--font-mono); white-space: nowrap;
+}
+#dlList li.dl-row .dl-spark {
+  flex: 0 0 auto; width: 96px; height: 22px;
+  border-radius: 5px; background: rgba(127, 176, 255, 0.06);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity 0.3s ease, transform 0.3s var(--ease-springy);
+}
+#dlList li.dl-row.st-spark-on .dl-spark { opacity: 1; transform: translateY(0); }
+
+/* ============================================================
+   Made by MrDuck — ЖИВАЯ СИСТЕМА ДВИЖЕНИЯ (200 Гц-friendly)
+   Единый блок токенов: раньше ease-кривые были разбросаны по трём
+   местам (44 / 1841 / 2366) и дублировались. Все анимации UI —
+   ТОЛЬКО transform/opacity (GPU-композитор): на 200 Гц кадр идёт
+   каждые 5 мс, layout/paint-свойства (width, background-position,
+   box-shadow на бесконечных циклах) вылетают из бюджета кадра.
+   ============================================================ */
+:root {
+  --ease-swift: cubic-bezier(0.32, 0.72, 0, 1);     /* панели/ящики: быстрый разгон, мягкий доезд */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);       /* дефолт «выезд» */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1); /* попы диалогов */
+  --ease-springy: cubic-bezier(0.3, 1.4, 0.5, 1);   /* пружинки кнопок/иконок */
+  --t-fast: 0.14s;   /* отклик (цвет, фон) */
+  --t-move: 0.22s;    /* движение (панели, пилюли) */
+  --t-show: 0.32s;    /* появление (диалоги, страницы) */
+}
+
+/* Плавный скролл списков/панелей — CSS-side, без JS-таймеров */
+.side-panel, .home, .list, #dlList { scroll-behavior: smooth; }
+
+/* Селект/инпуты/текст-поля: мягкая релаксация рамки при фокусе */
+input, select, textarea {
+  transition: border-color var(--t-fast) ease,
+              box-shadow 0.25s var(--ease-out, ease),
+              background var(--t-fast) ease;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  transition-duration: 0.06s; /* фокус-кольцо вспыхивает мгновенно */
+}
+
+/* Доступность: тот, кто попросил меньше движения — получает статичный UI */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   Made by MrDuck — ЖИВОЙ ФОН-СОЗВЕЗДИЕ + СТЕКЛЯННЫЙ РЕЖИМ
+   #apbFxCanvas: под всем UI, рисуется rAF (200 Гц = 200 кадров/с),
+   pointer-events: none — клики уходят интерфейсу. Точки/линии берут
+   цвет --accent — созвездие перекрашивается вместе с темой.
+   ============================================================ */
+#apbFxCanvas {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  z-index: 0; pointer-events: none;
+}
+
+/* Стеклянный режим: хром и панели — полупрозрачное стекло с размытием,
+   сквозь них видно созвездие. Вложенные сплошные слои становятся
+   стеклообразными тоже (панели поверх панелей). */
+html.apb-glass body { background: transparent; }
+html.apb-glass .sidebar,
+html.apb-glass .toolbar,
+html.apb-glass .side-panel,
+html.apb-glass #aiPane,
+html.apb-glass .internal-host,
+html.apb-glass .browser-view {
+  background: transparent;
+}
+html.apb-glass .sidebar { backdrop-filter: blur(30px) saturate(160%); }
+html.apb-glass .toolbar,
+html.apb-glass .internal-host,
+html.apb-glass .browser-view,
+html.apb-glass .side-panel,
+html.apb-glass #aiPane {
+  background: color-mix(in srgb, var(--bg) 48%, transparent);
+  backdrop-filter: blur(30px) saturate(160%);
+  /* Матовое стекло: лёгкая зернистость (шум COP — как у настоящего
+     матового стекла) поверх цветного фона. */
+  background-image:
+    radial-gradient(rgba(255,255,255,0.028) 0.6px, transparent 0.7px),
+    radial-gradient(rgba(0,0,0,0.05) 0.6px, transparent 0.7px);
+  background-size: 3px 3px, 5px 5px;
+  background-position: 0 0, 2px 3px;
+}
+html.apb-glass .isec-nav { background: transparent; }
+html.apb-glass .list li,
+html.apb-glass .internal-page,
+html.apb-glass .panel { background: color-mix(in srgb, var(--surface) 62%, transparent); }
+html.apb-glass .address-form input { background: color-mix(in srgb, var(--surface) 55%, transparent); backdrop-filter: blur(14px); }
+
+/* --- Тумблер apb-switch (создан для fx-настроек, пригодится дальше) --- */
+.fx-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  transition: border-color var(--t-fast) ease, transform 0.18s var(--ease-out, ease);
+}
+.fx-row:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.fx-lbl { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fx-name { font-weight: 600; color: var(--text); font-size: 12.5px; }
+.fx-desc { color: var(--text-faint); font-size: 11px; line-height: 1.45; }
+.apb-switch { position: relative; display: inline-block; flex-shrink: 0; cursor: pointer; }
+.apb-switch input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.apb-switch .knob {
+  display: block; width: 40px; height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-faint) 28%, transparent);
+  transition: background 0.22s var(--ease-out, ease);
+  position: relative;
+}
+.apb-switch .knob::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 999px;
+  background: var(--bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.24s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1));
+}
+.apb-switch input:checked + .knob { background: var(--accent); }
+.apb-switch input:checked + .knob::after { transform: translateX(18px); }
+.apb-switch:active .knob::after { width: 19px; }
+
+/* --- Омнибокс: вращающееся conic-кольцо при фокусе убрано по запросу --- */
+
+/* --- Тайлы «недавних» на доме: 3D-наклон к курсору + параллакс-иконка --- */
+.recent-chip {
+  transition: transform 0.25s var(--ease-springy, cubic-bezier(0.3, 1.4, 0.5, 1)),
+              box-shadow 0.25s ease, border-color var(--t-fast) ease;
+  will-change: transform;
+}
+.recent-chip:hover {
+  transform: perspective(500px) rotateX(4deg) rotateY(-6deg) translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.recent-chip:active { transform: perspective(500px) rotateX(0) rotateY(0) scale(0.97); transition-duration: 0.06s; }
+.recent-chip .chip-ico, .recent-chip .chip-lbl {
+  transition: transform 0.25s var(--ease-out, ease);
+}
+.recent-chip:hover .chip-ico { transform: translateX(2px) scale(1.08); }
+.recent-chip:hover .chip-lbl { transform: translateX(2px); }
+
+/* --- Каскад секций внутренних страниц: каждая чуть позже предыдущей --- */
+.internal-page .panel-subtitle, .internal-page details, .internal-page .fx-row,
+.internal-page .row, .internal-page .badge-row, .internal-page .hint {
+  animation: apb-fade-up 0.4s var(--ease-out, ease) both;
+}
+.internal-page .panel-subtitle:nth-of-type(1), .internal-page details:nth-of-type(1) { animation-delay: 0.02s; }
+.internal-page .panel-subtitle:nth-of-type(2), .internal-page details:nth-of-type(2) { animation-delay: 0.08s; }
+.internal-page .panel-subtitle:nth-of-type(3), .internal-page details:nth-of-type(3) { animation-delay: 0.14s; }
+.internal-page .panel-subtitle:nth-of-type(4), .internal-page details:nth-of-type(4) { animation-delay: 0.2s; }
+.internal-page .panel-subtitle:nth-of-type(5), .internal-page details:nth-of-type(5) { animation-delay: 0.26s; }
+.internal-page .panel-subtitle:nth-of-type(6), .internal-page details:nth-of-type(6) { animation-delay: 0.32s; }
+.internal-page .panel-subtitle:nth-of-type(7), .internal-page details:nth-of-type(7) { animation-delay: 0.38s; }
+.internal-page .panel-subtitle:nth-of-type(8), .internal-page details:nth-of-type(8) { animation-delay: 0.44s; }
+
+/* --- Ripple на кнопках: расходящееся кольцо от точки клика --- */
+button { position: relative; overflow: hidden; }
+.apb-ripple {
+  position: absolute; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  animation: apb-ripple 0.55s var(--ease-out, ease) forwards;
+}
+@keyframes apb-ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+/* --- Подсказки v2: свои типы пунктов + подсветка совпадения --- */
+.omni-item b.omni-hl {
+  color: var(--accent);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-radius: 4px;
+  padding: 0 1px;
+}
+.omni-item .omni-comp {
+  color: var(--accent);
+  font-weight: 700;
+}
+.omni-item.omni-bm .omni-ic { color: #f5b84b; opacity: 1; filter: saturate(1.2); }
+.omni-item.omni-want .omni-ic { filter: saturate(1.6); }
+.omni-item.omni-search { color: var(--text-dim); }
+.omni-item.omni-search .omni-t { font-style: italic; }
+.omni-item.omni-search .omni-ic { transform: scale(0.92); }
+.omni-item .omni-ic { transition: transform 0.25s var(--ease-springy, ease); }
+.omni-item:hover .omni-ic, .omni-item.sel .omni-ic { transform: scale(1.18); }
+.omni-item .omni-u { font-size: 10.5px; }
+
+/* ============================================================
+   Made by MrDuck — закреплённые вкладки, папки закладок,
+   прозрачное окно (clear — сквозь браузер видно рабочий стол)
+   ============================================================ */
+
+/* Закреплённая вкладка: компактный квадрат — фавикон + 📌 (без ✕) */
+.tab-pill.pinned {
+  padding: 6px;
+  justify-content: center;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.tab-pill.pinned .tab-fav { width: 22px; height: 22px; }
+.tab-pill.pinned:hover { transform: scale(1.06); }
+.tab-pill.pinned:active { transform: scale(0.92); }
+.tab-pill-pin {
+  background: none; border: none; color: var(--text-faint);
+  cursor: pointer; width: 18px; height: 18px; border-radius: 5px;
+  font-size: 10px; line-height: 1; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.16s ease, transform 0.18s var(--ease-springy, ease), background 0.15s ease;
+}
+.tab-pill:hover .tab-pill-pin, .tab-pill-pin.pinned-on { opacity: 1; }
+.tab-pill-pin:hover { background: var(--surface-2); transform: scale(1.2); }
+.tab-pill-pin.pinned-on { color: var(--accent); }
+/* у закреплённой кнопка живёт постоянно (иначе не открепить) */
+.tab-pill.pinned .tab-pill-pin { opacity: 1; width: 14px; height: 14px; position: absolute; right: 1px; bottom: 1px; }
+
+/* Папки закладок в панели: дерево с отступами, стрелка-каретка */
+.bm-folder { border: 1px dashed var(--border); border-radius: var(--r-sm); padding: 6px 8px; margin: 4px 0; background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+.bm-folder > summary { cursor: pointer; font-weight: 700; font-size: 12.5px; color: var(--text); user-select: none; transition: color var(--t-fast) ease, transform 0.16s ease; }
+.bm-folder > summary:hover { color: var(--accent); transform: translateX(2px); }
+.bm-folder[open] > summary { color: var(--accent); }
+.bm-folder .list { margin: 6px 0 2px; gap: 4px; }
+.bm-folder li { padding: 6px 8px; }
+
+/* Кнопки режима прозрачности окна: активная — акцентная */
+.fx-win.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* ============================================================
+   Made by MrDuck — ПРОЗРАЧНОЕ ОКНО v2 (рабочая версия)
+   ГРАБЛЯ 36: прозрачность убивали ТРИ слоя: (1) html { background:
+   var(--bg) } — непрозрачная краска на всём окне; (2) webview-движок
+   WebView2 — окно transparent, а движок красил белым (лечится
+   set_background_color(0,0,0,0) на живом окне — см. windowfx.rs);
+   (3) контейнеры .browser-view/.internal-host с фоном var(--bg).
+   Оба режима включают html.apb-window-blur / .apb-window-clear.
+   ============================================================ */
+html.apb-window-clear,
+html.apb-window-blur,
+html.apb-window-clear body,
+html.apb-window-blur body { background: transparent !important; }
+html.apb-window-clear .browser-view,
+html.apb-window-clear .internal-host,
+html.apb-window-clear .home,
+html.apb-window-clear .browser-empty,
+html.apb-window-blur .browser-view,
+html.apb-window-blur .internal-host { background: transparent !important; }
+/* Хром держит лёгкую тонировку, чтобы текст читался поверх стола.
+   В blur-режиме за тонировкой СИСТЕМНЫЙ Acrylic (за окном реально
+   виден размытый рабочий стол); в clear — чистая прозрачность. */
+html.apb-window-clear .sidebar,
+html.apb-window-blur .sidebar { background: color-mix(in srgb, var(--bg) 82%, transparent); }
+html.apb-window-clear .toolbar,
+html.apb-window-blur .toolbar { background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(20px); }
+html.apb-window-clear .side-panel,
+html.apb-window-blur .side-panel,
+html.apb-window-clear #aiPane,
+html.apb-window-blur #aiPane { background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(24px) saturate(140%); }
+/* слой фоновой картинки интерфейса в прозрачном режиме гасим */
+html.apb-window-clear #apbBgLayer { display: none !important; }
+
+/* ============================================================
+   Made by MrDuck — контекст-меню пилюль, группы-папки вкладок,
+   закреплённая пилюля с фавиконом И названием
+   ============================================================ */
+
+/* Контекст-меню правого клика по вкладке */
+.apb-tabmenu {
+  position: fixed; z-index: 999999;
+  min-width: 200px; padding: 5px;
+  background: color-mix(in srgb, var(--bg-soft) 92%, transparent);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-2);
+  display: flex; flex-direction: column; gap: 2px;
+  animation: apb-pop 0.14s var(--ease-bounce, ease) backwards;
+}
+.apb-tabmenu button {
+  all: unset; cursor: pointer;
+  padding: 7px 10px; border-radius: 7px;
+  font-size: 12.5px; color: var(--text);
+  transition: background 0.12s ease, color 0.12s ease, transform 0.15s var(--ease-springy, ease);
+}
+.apb-tabmenu button:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--text); transform: translateX(2px); }
+.apb-tabmenu button:active { transform: scale(0.97); }
+.apb-tabmenu button.danger { color: var(--danger, #ff6575); }
+.apb-tabmenu button.danger:hover { background: color-mix(in srgb, var(--danger, #ff6575) 16%, transparent); }
+
+/* Группа-папка вкладок: рамка по краям + заголовок */
+.tab-group {
+  margin: 5px 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  padding: 4px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.tab-group-head {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 8px; margin-bottom: 3px;
+  border-radius: 7px;
+  font-size: 11.5px; font-weight: 700;
+  color: var(--accent);
+  cursor: pointer; user-select: none;
+  transition: background 0.15s ease, transform 0.15s var(--ease-springy, ease);
+}
+.tab-group-head:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); transform: translateX(2px); }
+.tab-group-body { display: flex; flex-direction: column; gap: 3px; }
+.tab-group .tab-pill { background: color-mix(in srgb, var(--surface) 65%, transparent); }
+.tab-group.collapsed { border-style: dashed; }
+.tab-group.collapsed .tab-group-head { margin-bottom: 0; }
+.tab-group.collapsed .tab-group-body { display: none; }
+
+/* Подсветка пилюли-цели при перетаскивании (drop создаст папку) */
+.tab-pill.tab-drop-target {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent),
+             0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent);
+  transform: scale(1.03);
+  transition: box-shadow 0.15s ease, transform 0.15s var(--ease-springy, ease);
+}
+
+/* Закреплённая пилюля: фавикон + НАЗВАНИЕ + мелкая 📌-метка; без ✕ */
+.tab-pill.pinned {
+  padding: 5px 8px;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.tab-pill.pinned .tab-pill-title { font-weight: 600; font-size: 11.5px; }
+.tab-pill-pinmark {
+  font-size: 9px; line-height: 1; flex-shrink: 0;
+  filter: saturate(1.3);
+  transform: scale(1);
+  transition: transform 0.2s var(--ease-springy, ease);
+}
+.tab-pill.pinned:hover .tab-pill-pinmark { transform: scale(1.25) rotate(-8deg); }
+
+/* v8 purposeful motion, AI chat and secure vault */
+.internal-page.active{animation:pageReveal .28s cubic-bezier(.2,.8,.2,1)}@keyframes pageReveal{from{opacity:0;translate:0 8px;filter:blur(3px)}to{opacity:1;translate:0 0;filter:none}}button:not(:disabled){transition:transform .16s,background .16s,border-color .16s,box-shadow .16s}button:not(:disabled):active{transform:scale(.96)}.tab-pill.active{animation:tabWake .28s cubic-bezier(.2,1.4,.4,1)}@keyframes tabWake{from{scale:.94;opacity:.65}to{scale:1;opacity:1}}.toast,.mini-toast{animation:toastSpring .36s cubic-bezier(.2,1.4,.35,1)}@keyframes toastSpring{from{opacity:0;translate:18px 8px;scale:.88}to{opacity:1;translate:0;scale:1}}
+.ai-pane{background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 96%,var(--accent) 4%),var(--bg));border-left:1px solid var(--border)}.ai-brand{display:flex;align-items:center;gap:9px;margin-right:auto}.ai-brand>span:last-child{display:grid}.ai-brand small{font-size:10px;color:var(--text-dim)}.ai-orb,.ai-welcome-orb{display:grid;place-items:center;width:32px;height:32px;border-radius:11px;background:linear-gradient(135deg,var(--accent),#9c6cff);color:white;box-shadow:0 0 24px color-mix(in srgb,var(--accent) 35%,transparent);position:relative}.ai-orb i{width:7px;height:7px;border-radius:50%;background:#fff;animation:aiPulse 2s infinite}.ai-welcome{text-align:center;margin:auto;padding:28px 18px;max-width:340px}.ai-welcome-orb{width:58px;height:58px;margin:0 auto 16px;border-radius:20px;font-size:24px;animation:aiFloat 4s ease-in-out infinite}.ai-welcome p{color:var(--text-dim);font-size:12px}.ai-suggestions{display:grid;gap:8px;margin-top:18px}.ai-suggestions button{padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);text-align:left}.chat-msg{border-radius:14px!important;animation:msgIn .25s ease-out;line-height:1.5}.chat-msg.user{border-bottom-right-radius:4px!important}.chat-msg.bot{border-bottom-left-radius:4px!important;background:var(--surface)!important}.chat-input-row{margin:10px;padding:8px;border:1px solid var(--border);border-radius:15px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.12)}.chat-input-row textarea{border:0!important;background:transparent!important;resize:none}.chat-input-row:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent)}@keyframes aiPulse{50%{scale:.5;opacity:.5}}@keyframes aiFloat{50%{translate:0 -7px;rotate:3deg}}@keyframes msgIn{from{opacity:0;translate:0 8px;scale:.97}}.vault-gate{max-width:470px!important;padding:32px!important;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 22px 60px rgba(0,0,0,.2)}.vault-orbit{width:86px;height:86px;margin:0 auto 14px;position:relative;display:grid;place-items:center}.vault-orbit>span{position:absolute;inset:5px;border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);border-radius:50%;animation:vaultOrbit 6s linear infinite}.vault-orbit>span:nth-child(2){inset:14px;animation-direction:reverse;animation-duration:4s}.vault-orbit>span:nth-child(3){inset:24px;animation-duration:3s}.vault-orbit .pw-lock-icon{position:relative;font-size:28px}.vault-kicker{display:block;text-align:center;color:var(--accent);font-size:10px;text-transform:uppercase;letter-spacing:.14em}.vault-explain{text-align:center;color:var(--text-dim);font-size:12px;margin-bottom:18px}.vault-field{display:grid;gap:6px;margin:10px 0}.vault-field span{font-size:11px;color:var(--text-dim)}.vault-field input{width:100%;box-sizing:border-box;padding:11px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text)}.vault-strength{height:5px;border-radius:5px;background:var(--bg);overflow:hidden;margin-top:8px}.vault-strength i{display:block;height:100%;width:0;background:var(--danger);transition:width .25s,background .25s}.vault-strength i[data-level="2"]{background:#ffb347}.vault-strength i[data-level="3"],.vault-strength i[data-level="4"]{background:var(--success)}.vault-security-check{display:flex;gap:8px;align-items:flex-start;margin:14px 0;color:var(--text-dim);font-size:11px}.vault-actions{display:grid;margin-top:14px}.vault-error{min-height:18px;color:var(--danger);font-size:11px;text-align:center}.vault-gate.vault-shake{animation:vaultShake .3s}@keyframes vaultOrbit{to{rotate:360deg}}@keyframes vaultShake{25%{translate:-5px 0}75%{translate:5px 0}}
+@media(prefers-reduced-motion:reduce){.internal-page.active,.tab-pill.active,.toast,.mini-toast,.ai-welcome-orb,.ai-orb i,.vault-orbit>span{animation:none!important}}

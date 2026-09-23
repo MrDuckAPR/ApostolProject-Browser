@@ -260,17 +260,41 @@ impl TrackerBlocker {
         added
     }
 
+    /// Критические для работы браузера домены — ядро поиска/порталов.
+    /// НИКОГДА не блокируются целиком, даже если кастомный список
+    /// пользователя добавил их в правила (ЖУРНАЛ 2026-09-20: www.google.com
+    /// 403 → ERR_TUNNEL_CONNECTION_FAILED). Точные ПОДдомены-трекеры
+    /// (analytics.google.com и т.п.) блокируются как раньше — защита
+    /// срабатывает только когда host сам в списке либо в правиле матчился
+    /// родитель.
+    const NEVER_BLOCK: &[&str] = &[
+        "google.com", "yandex.ru", "yandex.com", "duckduckgo.com",
+        "bing.com", "startpage.com", "github.com", "gitlab.com",
+        "youtube.com", "vk.com", "mail.ru", "wikipedia.org",
+        "telegram.org", "reddit.com", "x.com", "twitter.com",
+        "linkedin.com", "instagram.com", "facebook.com",
+    ];
+
     /// Classify a request host. Exact match or any-depth subdomain match.
     pub fn classify(&self, host: &str) -> Option<TrackerCategory> {
         let host = host.trim().to_lowercase();
         let host = host.strip_suffix('.').unwrap_or(&host);
         if let Some(cat) = self.rules.get(host) {
-            return Some(*cat);
+            // Точное правило на сам домен из кастомного списка может
+            // «крыть» критический хост (напр. google.com) — не даём.
+            if !Self::NEVER_BLOCK.contains(&host) {
+                return Some(*cat);
+            }
         }
         // Walk up parent domains: a.b.evil-tracker.com -> evil-tracker.com
         let mut rest = host;
         while let Some(dot) = rest.find('.') {
             rest = &rest[dot + 1..];
+            // Родитель из критического списка (www.google.com → google.com)
+            // перекрывает любое правило кастомного списка на этот корень.
+            if Self::NEVER_BLOCK.contains(&rest) {
+                return None;
+            }
             if let Some(cat) = self.rules.get(rest) {
                 return Some(*cat);
             }
@@ -866,6 +890,20 @@ mod tests {
         assert_eq!(added, 2);
         assert_eq!(b.classify("cdn.tracker.example"), Some(TrackerCategory::Advertising));
         assert_eq!(b.classify("bad-cdn.example"), Some(TrackerCategory::Advertising));
+    }
+
+    #[test]
+    fn critical_hosts_survive_custom_lists() {
+        // Корень поиска не должен падать под кастомным списком, где
+        // пользователь добавил google.com (было: www.google.com → 403 →
+        // ERR_TUNNEL_CONNECTION_FAILED, журнал 2026-09-20).
+        let mut b = TrackerBlocker::new();
+        b.add_custom_list("google.com\n0.0.0.0 yandex.ru", TrackerCategory::Advertising);
+        assert_eq!(b.classify("www.google.com"), None);
+        assert_eq!(b.classify("google.com"), None);
+        assert_eq!(b.classify("yandex.ru"), None);
+        // Точный трекер-поддомен при этом блокируется как раньше.
+        assert_eq!(b.classify("analytics.google.com"), Some(TrackerCategory::Analytics));
     }
 
     #[test]

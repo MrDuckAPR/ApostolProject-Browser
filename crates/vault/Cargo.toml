@@ -17,3 +17,5 @@ hmac = { workspace = true }
 sha1 = { workspace = true }
 getrandom = { workspace = true }
 base64ct = { workspace = true }
+
+zeroize = { workspace = true }

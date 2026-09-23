@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "remote-tabs",
+  "description": "Minimal bridge for untrusted web content",
+  "webviews": [
+    "page-*"
+  ],
+  "remote": {
+    "urls": [
+      "http://**",
+      "https://**"
+    ]
+  },
+  "permissions": [
+    "allow-tab-bridge"
+  ]
+}

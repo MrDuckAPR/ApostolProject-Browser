@@ -1,0 +1,10 @@
+/* Keyboard and high-contrast accessibility layer */
+:where(button,[href],input,select,textarea,summary,[tabindex]):focus-visible{outline:3px solid var(--accent)!important;outline-offset:2px!important;box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 25%,transparent)!important}
+:where(button,[role=tab],[role=menuitem]):focus-visible{position:relative;z-index:10}
+.skip-link{position:fixed;left:12px;top:-60px;z-index:1000000;padding:10px 14px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-weight:700}.skip-link:focus{top:12px}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.profile-sync-card,.vault-security-row{margin:14px 0;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.profile-sync-card h3{margin:0 0 6px}.profile-sync-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.profile-sync-fields label{display:grid;gap:5px}.profile-sync-fields span{font-size:11px;color:var(--text-dim)}.profile-sync-fields input{min-width:0}.profile-sync-card .error{color:var(--danger)}
+.vault-security-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px}.vault-security-row label{display:flex;align-items:center;gap:6px}.vault-security-row span{color:var(--text-dim)}
+@media(max-width:650px){.profile-sync-fields{grid-template-columns:1fr}.vault-security-row{align-items:flex-start;flex-direction:column}}
+@media(forced-colors:active){*{border-color:CanvasText!important}.hidden{display:none!important}:focus-visible{outline:3px solid Highlight!important;box-shadow:none!important}}
